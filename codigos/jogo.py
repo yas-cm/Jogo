@@ -1,10 +1,21 @@
+# -*- coding: utf-8 -*-
 import random
 from classes import *
+import textwrap
+LARGURA_MAXIMA = 80
+
+PRETO = "\033[30m"
+VERMELHO = "\033[31m"
+VERDE = "\033[32m"
+AMARELO = "\033[33m"
+AZUL = "\033[34m"
+ROXO = "\033[35m"
+CIANO = "\033[36m"
+BRANCO = "\033[37m"
+RESETAR = "\033[0m"
 
 class Jogo:
     def __init__(self):
-
-        print("--- Bem vindo a Wolvesville ---")
         
         self.nomes = ["Maria", "Isabella", "Angelina", "Diego", "Carlos", "Victor", "Guilherme"]
         
@@ -45,15 +56,56 @@ class Jogo:
             
             self.jogadores.append(jogador_objeto)
 
+def lista_suspeitos(default):
+    print(CIANO+"Lista de suspeitos"+RESETAR)
+    if default == True:
+        print(PRETO+"Maria        ||  Cidadao")
+        print("Isabella     ||  Lobisomem")
+        print("Angelina     ||  Medico")
+        print("Diego        ||  ")
+        print("Carlos       ||  ")
+        print("Victor       ||  Vidente")
+        print("Guilherme    ||  "+RESETAR)
 
-if __name__ == "__main__":
-    print("Criando o primeiro jogo...")
-    meu_jogo = Jogo()
+def formatar_paragrafo(texto):
+    return textwrap.fill(texto, width=LARGURA_MAXIMA, replace_whitespace=False)
+
+def inicio():
+    print(ROXO+"\n\n                        Bem vindo a Wolvesville!"+RESETAR)
+    print("" + "="*80 + "")
+    texto = """Você é um detetive renomado, e seu novo caso o leva à misteriosa cidade de Wolvesville, onde eventos estranhos têm tirado o sono dos moradores."""
+    print(formatar_paragrafo(texto))
+    print()
+    texto = """Antes mesmo de arrumar as malas, você fez uma pesquisa preliminar. O que descobriu foi alarmante: os "eventos incomuns" eram apenas a ponta do iceberg. O mistério era muito mais profundo e perigoso do que as notícias locais sugeriam. Percebendo a gravidade da situação, você decidiu que este caso exigia sua presença pessoal."""
+    print(formatar_paragrafo(texto))
+    print("\nAgora, em Wolvesville, sua rotina é clara:")
+    print(ROXO+"Durante o dia: "+RESETAR+"Você investiga a cidade, segue pistas e entrevista os vários suspeitos.")
+    texto = ROXO+"""Durante a noite:"""+RESETAR+""" Você se mantém em segurança, revisando e organizando as informações coletadas em seu diário de investigação."""
+    print(formatar_paragrafo(texto))
+    print("\n")
+    print(ROXO+"                           Como o jogo funciona"+RESETAR)
+    print("" + "="*80 + "")
+    texto = """O jogo avança em rodadas (cada noite é uma rodada). A partir da primeira noite, você terá estas opções principais:"""
+    print(formatar_paragrafo(texto))
+    texto = ROXO+"""A. Atualizar lista de suspeitos: """+RESETAR+"""Use esta opção para registrar seus palpites sobre os papéis de cada suspeito. Além de ajudar na sua organização, cada palpite correto renderá pontos de bônus ao final do jogo."""
+    print(formatar_paragrafo(texto))
+    print(PRETO+"Exemplo da lista de suspeitos:"+RESETAR)
+    lista_suspeitos(True)
+    print()
+    texto = ROXO+"""B. Finalizar investigação: """+RESETAR+"""Esta opção encerra o jogo. Ao selecioná-la e confirmar, sua pontuação total será revelada, mostrando o detalhamento dos seus acertos."""
+    print(formatar_paragrafo(texto))
+    print("" + "="*80 + "")
     
 
-    print("\nDebug       ---- Estes sao os papeis dos suspeitos:") 
-    for jogador in meu_jogo.jogadores:
-        print(jogador) 
+if __name__ == "__main__":
+    inicio()
+    # print("Criando o primeiro jogo...")
+    # meu_jogo = Jogo()
+    
+
+    # print("\nDebug       ---- Estes sao os papeis dos suspeitos:") 
+    # for jogador in meu_jogo.jogadores:
+    #     print(jogador) 
         
-    print("\n" + "="*40 + "\n")
+    # print("\n" + "="*40 + "\n")
     
