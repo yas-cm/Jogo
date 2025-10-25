@@ -67,6 +67,24 @@ def lista_suspeitos(default):
         print("Victor       ||  Vidente")
         print("Guilherme    ||  "+RESETAR)
 
+def finalizar_jogo(default):
+    print(CIANO+"Finalizar investigação"+RESETAR)
+    print("Sua pontuação final é calculada somando os bônus e subtraindo as penalidades")
+    print(VERDE+"Ganhos (Bônus)"+RESETAR)
+    print(VERDE+"+30 pontos:"+RESETAR+" Ao identificar corretamente o Lobisomem.")
+    print(VERDE+"+10 pontos:"+RESETAR+" Por cada suspeito (não-lobisomem) com o perfil identificado corretamente.\n")
+    print(VERMELHO+"Penalidades (Perdas)"+RESETAR)
+    print(VERMELHO+"-30 pontos:"+RESETAR+" Ao identificar erroneamente o Lobisomem.")
+    print(VERMELHO+"-5 pontos:"+RESETAR+" Por cada rodada (noite) que passa.")
+    print(VERMELHO+"-5 pontos:"+RESETAR+" Por cada morte de inocentes.")
+    print(VERMELHO+"-5 pontos:"+RESETAR+" Por cada perfil de suspeito identificado erroneamente.")
+    if default == True:
+        print("Seu palpite:")
+        lista_suspeitos(True)
+        print("\nSua pontuação:")
+        print(VERDE+"+30 pontos +10 pontos"+VERMELHO+" -5 pontos -5 pontos -5 pontos -5 pontos -5 pontos"+RESETAR)
+        print("Total: "+VERDE+"+15 pontos"+RESETAR)
+
 def formatar_paragrafo(texto):
     return textwrap.fill(texto, width=LARGURA_MAXIMA, replace_whitespace=False)
 
@@ -81,20 +99,24 @@ def inicio():
     print("\nAgora, em Wolvesville, sua rotina é clara:")
     print(ROXO+"Durante o dia: "+RESETAR+"Você investiga a cidade, segue pistas e entrevista os vários suspeitos.")
     texto = ROXO+"""Durante a noite:"""+RESETAR+""" Você se mantém em segurança, revisando e organizando as informações coletadas em seu diário de investigação."""
-    print(formatar_paragrafo(texto))
-    print("\n")
-    print(ROXO+"                           Como o jogo funciona"+RESETAR)
+    print(formatar_paragrafo(texto)+"\n")
+    input(PRETO+"Clique 'Enter' para continuar"+RESETAR)
+    print(ROXO+"\n                           Como o jogo funciona"+RESETAR)
     print("" + "="*80 + "")
     texto = """O jogo avança em rodadas (cada noite é uma rodada). A partir da primeira noite, você terá estas opções principais:"""
-    print(formatar_paragrafo(texto))
+    print(formatar_paragrafo(texto)+"\n")
     texto = ROXO+"""A. Atualizar lista de suspeitos: """+RESETAR+"""Use esta opção para registrar seus palpites sobre os papéis de cada suspeito. Além de ajudar na sua organização, cada palpite correto renderá pontos de bônus ao final do jogo."""
     print(formatar_paragrafo(texto))
     print(PRETO+"Exemplo da lista de suspeitos:"+RESETAR)
     lista_suspeitos(True)
+    print(PRETO+"="*80+RESETAR)
+    input(PRETO+"\nClique 'Enter' para continuar"+RESETAR)
     print()
     texto = ROXO+"""B. Finalizar investigação: """+RESETAR+"""Esta opção encerra o jogo. Ao selecioná-la e confirmar, sua pontuação total será revelada, mostrando o detalhamento dos seus acertos."""
     print(formatar_paragrafo(texto))
-    print("" + "="*80 + "")
+    print(PRETO+"Exemplo da finalização da investigação:"+RESETAR)
+    finalizar_jogo(True)
+    print(PRETO+"="*80+RESETAR)
     
 
 if __name__ == "__main__":
