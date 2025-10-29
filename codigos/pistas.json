@@ -52,11 +52,6 @@
             "uma carta de baralho (Rei de Espadas)",
             "um pedaço de tecido rasgado"
         ],
-        "objetos_reais": {
-            "Bruxa": "um pedaço de vidro quebrado, com um líquido roxo residual",
-            "Lobisomem": "tufos de pelos de animal não identificados",
-            "Pistoleiro": "uma cápsula de bala única, de um calibre incomum"
-        },
         "template_objeto": "Um objeto estranho foi encontrado na cena: {objeto}."
     },
 

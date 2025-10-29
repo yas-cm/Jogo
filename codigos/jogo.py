@@ -99,13 +99,18 @@ class Jogo:
         cura_bruxa = False
         alvo_pistoleiro = None
 
+        ataques_da_noite = {}
+
         # --- Ação do Lobo ---
         if lobo:
             # Lobo nao pode se matar
             alvos_possiveis = [j for j in vivos if j != lobo]
             if alvos_possiveis:
                 # O metodo matar() apenas retorna o alvo escolhido
-                alvo_lobo = lobo.matar(random.choice(alvos_possiveis)) 
+                alvo_lobo = lobo.matar(random.choice(alvos_possiveis))
+                if alvo_lobo:
+                    # Causa base (pode ser sobrescrita por causas piores)
+                    ataques_da_noite[alvo_lobo] = "Ataque de Lobisomem"
 
         # --- Ação do Médico ---
         if medico:
@@ -113,7 +118,7 @@ class Jogo:
             alvos_possiveis = vivos[:] 
             if alvos_possiveis:
                 # O metodo salvar() apenas retorna o alvo escolhido
-                alvo_medico = medico.salvar(random.choice(alvos_possiveis)) 
+                alvo_medico = medico.salvar(random.choice(alvos_possiveis))
 
         # --- Ação da Vidente ---
         if vidente:
@@ -157,9 +162,10 @@ class Jogo:
                     alvo_escolhido = random.choice(alvos_possiveis)
                     alvo_bruxa_veneno = bruxa.usar_veneno(alvo_escolhido)
                     if alvo_bruxa_veneno:
+                        ataques_da_noite[alvo_bruxa_veneno] = "Envenenamento"
                         self.eventos_noite["eventos_bruxa"].append("veneno")
                         print(f"\n    --- Debug: Bruxa ({bruxa.nome}) usou VENENO em {alvo_bruxa_veneno.nome}.\n")
-        
+                        
         # --- Ação do Pistoleiro ---
         if pistoleiro and pistoleiro.balas > 0:
             if random.random() < 0.50: # 50% de chance de atirar
@@ -168,46 +174,42 @@ class Jogo:
                     alvo_escolhido = random.choice(alvos_possiveis)
                     alvo_pistoleiro = pistoleiro.atirar(alvo_escolhido)
                     if alvo_pistoleiro:
-                        # O pistoleiro se revela ao atirar
+                        ataques_da_noite[alvo_pistoleiro] = "Tiro (Pistoleiro)"
+                        # Salva a pista da revelação
                         pista_pistoleiro = TEXTOS["fatos"]["pistoleiro_revelado"].format(pessoa=pistoleiro.nome)
                         self.eventos_noite["eventos_pistoleiro"].append(pista_pistoleiro)
                         print(f"    --- Debug [jogo.py]: Pistoleiro ({pistoleiro.nome}) ATIROU em {alvo_pistoleiro.nome}.")
 
-        # Quem foi marcado para morrer?
-        marcados_para_morrer = set()
-        if alvo_lobo:
-            marcados_para_morrer.add(alvo_lobo)
-        if alvo_bruxa_veneno: # <-- NOVO
-            marcados_para_morrer.add(alvo_bruxa_veneno)
-        if alvo_pistoleiro: # <-- NOVO
-            marcados_para_morrer.add(alvo_pistoleiro)
-        
         # Quem foi salvo pelo medico?
         salvos_pelo_medico = set()
         if alvo_medico:
             salvos_pelo_medico.add(alvo_medico)
 
-        sobreviventes_do_medico = marcados_para_morrer.intersection(salvos_pelo_medico)
-        vitimas_finais = marcados_para_morrer - salvos_pelo_medico
-
-        if cura_bruxa:
-            # Salva TODOS que ainda estavam na lista de vitimas
-            for alvo_salvo_pela_bruxa in vitimas_finais:
-                # Adiciona na lista de sobreviventes (para a pista do dia seguinte)
-                self.eventos_noite["sobreviventes"].append(alvo_salvo_pela_bruxa.nome)
+        for alvo_obj, causa_da_morte in ataques_da_noite.items():
             
-            vitimas_finais.clear()
-        
-        for sobrevivente in sobreviventes_do_medico:
-            # Adiciona na lista de sobreviventes (se a cura global ja nao o fez)
-            if sobrevivente.nome not in self.eventos_noite["sobreviventes"]:
-                self.eventos_noite["sobreviventes"].append(sobrevivente.nome)
-        
-        for vitima in vitimas_finais:
-            vitima.morrer()
-            self.eventos_noite["mortos"].append(vitima.nome)
+            personagem_salvo = False
+            
+            # Medico salvou?
+            if alvo_obj in salvos_pelo_medico:
+                self.eventos_noite["sobreviventes"].append(alvo_obj.nome)
+                personagem_salvo = True
+                print(f"Debug [jogo.py]: {alvo_obj.nome} foi salvo pelo Medico.")
 
-        print(f"Debug [jogo.py]: Simulacao finalizada. Mortos: {self.eventos_noite['mortos']}, Sobreviventes: {self.eventos_noite['sobreviventes']}")
+            # Bruxa curou?
+            if cura_bruxa:
+                # Nao adiciona na lista de sobreviventes se o medico JA salvou
+                if not personagem_salvo: 
+                    self.eventos_noite["sobreviventes"].append(alvo_obj.nome)
+                personagem_salvo = True
+
+            # Ninguém salvou.
+            if not personagem_salvo:
+                alvo_obj.morrer()
+                # Salva o dicionario com NOME e CAUSA
+                info_morte = {"pessoa": alvo_obj.nome, "causa": causa_da_morte}
+                self.eventos_noite["mortos"].append(info_morte)
+
+        print(f"Debug [jogo.py]: Simulacao finalizada. Mortos (info): {self.eventos_noite['mortos']}, Sobreviventes: {self.eventos_noite['sobreviventes']}")
 
 def lista_suspeitos(default):
     print(CIANO+"Lista de suspeitos"+RESETAR)
