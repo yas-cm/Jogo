@@ -3,7 +3,7 @@ import random
 from classes import *
 import textwrap
 import time
-import sys
+from pistas import gerar_pista, TEXTOS
 LARGURA_MAXIMA = 80
 
 PRETO = "\033[30m"
@@ -24,17 +24,19 @@ class Jogo:
         self.papeis_da_partida = [] # Quais 7 papeis estao neste jogo
         self.jogadores = []         # A lista final de objetos (ex: Medico("Maria"))
 
-        # 1. Define os 7 papeis (1 Lobo + 6 sorteados)
+        # Define os 7 papeis (1 Lobo + 6 sorteados)
         self._definir_papeis_partida()
-        
-        # 2. Distribui esses papeis aleatoriamente para os nomes
+        # Distribui esses papeis aleatoriamente para os nomes
         self.distribuir_papeis()
 
-    # 2. Metodo para definir os 7 papeis da partida
+        # Guarda os resultados da noite
+        self.eventos_noite = {}
+
+    # Metodo para definir os 7 papeis da partida
     def _definir_papeis_partida(self): # Metodo privado
 
         base_garantida = [Lobisomem, Medico, Cidadao, Cidadao] # Garantidos
-        pool_extra = [Lobisomem, Medico, Cidadao, Vidente, Bruxa, Pistoleiro] # Ultimos 3 sorteados entre esses
+        pool_extra = [Medico, Cidadao, Vidente, Bruxa, Pistoleiro] # Ultimos 3 sorteados entre esses
 
         random.shuffle(pool_extra)
         papeis_sorteados_extra = pool_extra[:3]
@@ -43,8 +45,7 @@ class Jogo:
         nomes_papeis = [p.__name__ for p in self.papeis_da_partida]
         print(f"Debug       ---- Papeis na partida (antes de embaralhar):\n{nomes_papeis}")
 
-
-    # 3. Metodo para distribuir os papeis aos nomes
+    # Metodo para distribuir os papeis aos nomes
     def distribuir_papeis(self):
 
         # Embaralhar a lista de papeis
@@ -58,96 +59,267 @@ class Jogo:
             
             self.jogadores.append(jogador_objeto)
 
+    # Executa todas as acoes da noite (Lobo, Medico, Vidente, etc), e armazena os resultados em self.eventos_noite.
+    def simular_noite(self):
+
+        print("\n           --- Debug Iniciando simulacao da noite...")
+        
+        self.eventos_noite = {
+            "mortos": [],                 # Lista de nomes (str) de quem morreu
+            "sobreviventes": [],          # Lista de nomes (str) de quem foi salvo
+            "pistas_vidente": [],         # O que a Vidente descobriu
+            "eventos_bruxa": [],          # O que a Bruxa fez
+            "eventos_pistoleiro": [],     # Se o pistoleiro atirou
+        }
+        
+        vivos = [j for j in self.jogadores if j.esta_vivo]
+        
+        lobo = None
+        medico = None
+        vidente = None
+        bruxa = None
+        pistoleiro = None
+        
+        for j in vivos:
+            if isinstance(j, Lobisomem):
+                lobo = j
+            elif isinstance(j, Medico):
+                medico = j
+            elif isinstance(j, Vidente):
+                vidente = j
+            elif isinstance(j, Bruxa):
+                bruxa = j
+            elif isinstance(j, Pistoleiro):
+                pistoleiro = j
+        
+        alvo_lobo = None
+        alvo_medico = None
+        alvo_vidente_obj = None
+        alvo_bruxa_veneno = None
+        cura_bruxa = False
+        alvo_pistoleiro = None
+
+        # --- Ação do Lobo ---
+        if lobo:
+            # Lobo nao pode se matar
+            alvos_possiveis = [j for j in vivos if j != lobo]
+            if alvos_possiveis:
+                # O metodo matar() apenas retorna o alvo escolhido
+                alvo_lobo = lobo.matar(random.choice(alvos_possiveis)) 
+
+        # --- Ação do Médico ---
+        if medico:
+            # Medico pode salvar qualquer um, inclusive ele mesmo
+            alvos_possiveis = vivos[:] 
+            if alvos_possiveis:
+                # O metodo salvar() apenas retorna o alvo escolhido
+                alvo_medico = medico.salvar(random.choice(alvos_possiveis)) 
+
+        # --- Ação da Vidente ---
+        if vidente:
+            # Vidente nao pode se investigar
+            alvos_possiveis = [j for j in vivos if j != vidente]
+            if alvos_possiveis:
+                alvo_vidente_obj = random.choice(alvos_possiveis)
+                # O metodo investigar() retorna o papel (str) do alvo
+                info_vidente = vidente.investigar(alvo_vidente_obj) 
+                
+                if random.random() < 0.75: # 75% de chance de ser a equipe
+                    if info_vidente == "Lobisomem":
+                        pista = TEXTOS["pistas_eventos"]["vidente_equipe"].format(equipe="Ameaça")
+                    elif info_vidente == "Pistoleiro" or info_vidente == "Bruxa":
+                        pista = TEXTOS["pistas_eventos"]["vidente_equipe"].format(equipe="Neutro")
+                    else:
+                        pista = TEXTOS["pistas_eventos"]["vidente_equipe"].format(equipe="Inocente")
+                else:
+                    pista = TEXTOS["pistas_eventos"]["vidente_papel"].format(papel=info_vidente) 
+
+                self.eventos_noite["pistas_vidente"].append(pista)
+                # O Debug continua o mesmo
+                print(f"\n        --- Debug [jogo.py]: Vidente investigou {alvo_vidente_obj.nome} e descobriu: {info_vidente}")
+                print(f"        --- Debug [jogo.py]: Pista gerada para o detetive: {pista}\n")
+
+        # --- Ação da Bruxa ---            
+        if bruxa:
+            chance = random.random() # Sorteia 0.0 a 1.0
+            
+            # 25% de chance de Cura
+            if chance < 0.25 and bruxa.pocao_cura:
+                bruxa_usou_cura_global = bruxa.usar_cura()
+                if bruxa_usou_cura_global:
+                    self.eventos_noite["eventos_bruxa"].append("cura")
+                    print(f"\n    --- Debug: Bruxa ({bruxa.nome}) usou a POCAo DE CURA.\n")
+            
+            # 25% de chance de Veneno (entre 0.25 e 0.50)
+            elif chance > 0.25 and chance < 0.50 and bruxa.pocao_veneno:
+                alvos_possiveis = [j for j in vivos if j != bruxa] # Nao pode se envenenar
+                if alvos_possiveis:
+                    alvo_escolhido = random.choice(alvos_possiveis)
+                    alvo_bruxa_veneno = bruxa.usar_veneno(alvo_escolhido)
+                    if alvo_bruxa_veneno:
+                        self.eventos_noite["eventos_bruxa"].append("veneno")
+                        print(f"\n    --- Debug: Bruxa ({bruxa.nome}) usou VENENO em {alvo_bruxa_veneno.nome}.\n")
+        
+        # --- Ação do Pistoleiro ---
+        if pistoleiro and pistoleiro.balas > 0:
+            if random.random() < 0.50: # 50% de chance de atirar
+                alvos_possiveis = [j for j in vivos if j != pistoleiro]
+                if alvos_possiveis:
+                    alvo_escolhido = random.choice(alvos_possiveis)
+                    alvo_pistoleiro = pistoleiro.atirar(alvo_escolhido)
+                    if alvo_pistoleiro:
+                        # O pistoleiro se revela ao atirar
+                        pista_pistoleiro = TEXTOS["fatos"]["pistoleiro_revelado"].format(pessoa=pistoleiro.nome)
+                        self.eventos_noite["eventos_pistoleiro"].append(pista_pistoleiro)
+                        print(f"    --- Debug [jogo.py]: Pistoleiro ({pistoleiro.nome}) ATIROU em {alvo_pistoleiro.nome}.")
+
+        # Quem foi marcado para morrer?
+        marcados_para_morrer = set()
+        if alvo_lobo:
+            marcados_para_morrer.add(alvo_lobo)
+        if alvo_bruxa_veneno: # <-- NOVO
+            marcados_para_morrer.add(alvo_bruxa_veneno)
+        if alvo_pistoleiro: # <-- NOVO
+            marcados_para_morrer.add(alvo_pistoleiro)
+        
+        # Quem foi salvo pelo medico?
+        salvos_pelo_medico = set()
+        if alvo_medico:
+            salvos_pelo_medico.add(alvo_medico)
+
+        sobreviventes_do_medico = marcados_para_morrer.intersection(salvos_pelo_medico)
+        vitimas_finais = marcados_para_morrer - salvos_pelo_medico
+
+        if cura_bruxa:
+            # Salva TODOS que ainda estavam na lista de vitimas
+            for alvo_salvo_pela_bruxa in vitimas_finais:
+                # Adiciona na lista de sobreviventes (para a pista do dia seguinte)
+                self.eventos_noite["sobreviventes"].append(alvo_salvo_pela_bruxa.nome)
+            
+            vitimas_finais.clear()
+        
+        for sobrevivente in sobreviventes_do_medico:
+            # Adiciona na lista de sobreviventes (se a cura global ja nao o fez)
+            if sobrevivente.nome not in self.eventos_noite["sobreviventes"]:
+                self.eventos_noite["sobreviventes"].append(sobrevivente.nome)
+        
+        for vitima in vitimas_finais:
+            vitima.morrer()
+            self.eventos_noite["mortos"].append(vitima.nome)
+
+        print(f"Debug [jogo.py]: Simulacao finalizada. Mortos: {self.eventos_noite['mortos']}, Sobreviventes: {self.eventos_noite['sobreviventes']}")
+
 def lista_suspeitos(default):
     print(CIANO+"Lista de suspeitos"+RESETAR)
     if default == True:
-        print(PRETO+"Maria        ||  Cidadao")
-        print("Isabella     ||  Lobisomem")
-        print("Angelina     ||  Medico")
-        print("Diego        ||  ")
-        print("Carlos       ||  ")
-        print("Victor       ||  Vidente")
-        print("Guilherme    ||  "+RESETAR)
+        formatar_paragrafo(PRETO+"Maria        ||  Cidadao")
+        formatar_paragrafo("Isabella     ||  Lobisomem")
+        formatar_paragrafo("Angelina     ||  Medico")
+        formatar_paragrafo("Diego        ||  ")
+        formatar_paragrafo("Carlos       ||  ")
+        formatar_paragrafo("Victor       ||  Vidente")
+        formatar_paragrafo("Guilherme    ||  "+RESETAR)
 
 def finalizar_jogo(default):
-    print(CIANO+"Finalizar investigação"+RESETAR)
-    print("Sua pontuação final é calculada somando os bônus e subtraindo as penalidades")
-    print(VERDE+"Ganhos (Bônus)"+RESETAR)
-    print(VERDE+"+30 pontos:"+RESETAR+" Ao identificar corretamente o Lobisomem.")
-    print(VERDE+"+10 pontos:"+RESETAR+" Por cada suspeito (não-lobisomem) com o perfil identificado corretamente.\n")
-    print(VERMELHO+"Penalidades (Perdas)"+RESETAR)
-    print(VERMELHO+"-30 pontos:"+RESETAR+" Ao identificar erroneamente o Lobisomem.")
-    print(VERMELHO+"-5 pontos:"+RESETAR+" Por cada rodada (noite) que passa.")
-    print(VERMELHO+"-5 pontos:"+RESETAR+" Por cada morte de inocentes.")
-    print(VERMELHO+"-5 pontos:"+RESETAR+" Por cada perfil de suspeito identificado erroneamente.")
+    formatar_paragrafo(CIANO+"Finalizar investigação"+RESETAR)
+    formatar_paragrafo("Sua pontuação final é calculada somando os bônus e subtraindo as penalidades")
+    formatar_paragrafo(VERDE+"Ganhos (Bônus)"+RESETAR)
+    formatar_paragrafo(VERDE+"+30 pontos:"+RESETAR+" Ao identificar corretamente o Lobisomem.")
+    formatar_paragrafo(VERDE+"+10 pontos:"+RESETAR+" Por cada suspeito (não-lobisomem) com o perfil identificado corretamente.\n")
+    formatar_paragrafo(VERMELHO+"Penalidades (Perdas)"+RESETAR)
+    formatar_paragrafo(VERMELHO+"-30 pontos:"+RESETAR+" Ao identificar erroneamente o Lobisomem.")
+    formatar_paragrafo(VERMELHO+"-5 pontos:"+RESETAR+" Por cada rodada (noite) que passa.")
+    formatar_paragrafo(VERMELHO+"-5 pontos:"+RESETAR+" Por cada morte de inocentes.")
+    formatar_paragrafo(VERMELHO+"-5 pontos:"+RESETAR+" Por cada perfil de suspeito identificado erroneamente.")
     if default == True:
-        print("Seu palpite:")
+        formatar_paragrafo("Seu palpite:")
         lista_suspeitos(True)
-        print("\nSua pontuação:")
-        print(VERDE+"+30 pontos +10 pontos"+VERMELHO+" -5 pontos -5 pontos -5 pontos -5 pontos -5 pontos"+RESETAR)
-        print("Total: "+VERDE+"+15 pontos"+RESETAR)
+        formatar_paragrafo("\nSua pontuação:")
+        formatar_paragrafo(VERDE+"+30 pontos +10 pontos"+VERMELHO+" -5 pontos -5 pontos -5 pontos -5 pontos -5 pontos"+RESETAR)
+        formatar_paragrafo("Total: "+VERDE+"+15 pontos"+RESETAR)
 
 def formatar_paragrafo(texto):
     texto_formatado = textwrap.fill(texto, width=LARGURA_MAXIMA, replace_whitespace=False)
     for letra in texto_formatado:
         print(letra, end='', flush=True) 
         time.sleep(0.05)
+    print()
 
+def informacoes_noite(jogo, rodada):
+    print()
+    texto = PRETO+"""O alívio de acordar dura pouco. Você liga o jornal e a primeira notícia te traz de volta a realidade. O trabalho começou."""
+    formatar_paragrafo(texto)
+    texto = """No fim do dia, após várias entrevistas com os moradores (suspeitos), retorna ao hotel para organizar o que coletou."""+RESETAR
+    formatar_paragrafo(texto)
+    print(AZUL+"\nInformações coletadas:"+RESETAR)
+
+    pista = gerar_pista(jogo, rodada)
+    formatar_paragrafo(pista)
+    
 # Contexto e tutorial inicial
 def inicio():
+    # Contexto
     texto = """Você é um detetive renomado, e seu novo caso o leva à misteriosa cidade de Wolvesville, onde eventos estranhos têm tirado o sono dos moradores."""
     formatar_paragrafo(texto)
-    print()
     texto = """Antes mesmo de arrumar as malas, você fez uma pesquisa preliminar. O que descobriu foi alarmante: os "eventos incomuns" eram apenas a ponta do iceberg. O mistério era muito mais profundo e perigoso do que as notícias locais sugeriam. Percebendo a gravidade da situação, você decidiu que este caso exigia sua presença pessoal."""
     formatar_paragrafo(texto)
-    print()
     formatar_paragrafo("Agora, em Wolvesville, sua rotina é clara:")
-    print()
     formatar_paragrafo(ROXO+"Durante o dia: "+RESETAR+"Você investiga a cidade, segue pistas e entrevista os vários suspeitos.")
-    print()
     texto = ROXO+"""Durante a noite:"""+RESETAR+""" Você se mantém em segurança, revisando e organizando as informações coletadas em seu diário de investigação."""
     formatar_paragrafo(texto)
-    print()
+
     input(PRETO+"Clique 'Enter' para continuar"+RESETAR)
+
+    # Explicação do jogo
     print(ROXO+"\n                           Como o jogo funciona"+RESETAR)
     print("" + "="*80 + "")
     texto = """O jogo avança em rodadas (cada noite é uma rodada). A partir da primeira noite, você terá estas opções principais:"""
     formatar_paragrafo(texto)
-    print()
+
+    # --- A ---
     texto = ROXO+"""A. Atualizar lista de suspeitos: """+RESETAR+"""Use esta opção para registrar seus palpites sobre os papéis de cada suspeito. Além de ajudar na sua organização, cada palpite correto renderá pontos de bônus ao final do jogo."""
     formatar_paragrafo(texto)
-    print()
     print(PRETO+"Exemplo da lista de suspeitos:"+RESETAR)
     lista_suspeitos(True)
     print(PRETO+"="*80+RESETAR)
-    input(PRETO+"\nClique 'Enter' para continuar"+RESETAR)
-    print()
+
+    input(PRETO+"\nClique 'Enter' para continuar\n"+RESETAR)
+
+    # --- B ---
     texto = ROXO+"""B. Finalizar investigação: """+RESETAR+"""Esta opção encerra o jogo. Ao selecioná-la e confirmar, sua pontuação total será revelada, mostrando o detalhamento dos seus acertos."""
     formatar_paragrafo(texto)
-    print()
     print(PRETO+"Exemplo da finalização da investigação:"+RESETAR)
     finalizar_jogo(True)
     print(PRETO+"="*80+RESETAR)
+
+    input(PRETO+"\nClique 'Enter' para continuar\n"+RESETAR)
+
+    # --- C ---
     texto = ROXO+"""C. Passar para a noite (dormir): """+RESETAR+"""Passa para a proxima noite"""
     formatar_paragrafo(texto)
     print()
+    print(PRETO+"="*80+RESETAR)
 
 if __name__ == "__main__":
     print(ROXO+"\n\n\t\t\tBem vindo a Wolvesville!"+RESETAR)
     print("" + "="*80 + "")
-    op = input(PRETO+"Para pular a explicação, pressione 0\nPara continuar, pressione 'Enter'\n"+RESETAR)
-    if op == '0':
-        print("Iniciando jogo.....")
-    else:
+    op = input(PRETO+"Para pular a explicação, pressione 0\nPara continuar, pressione 'Enter' "+RESETAR)
+    if op != '0':
         inicio()
 
+    # Inicio do jogo    
+    print(AZUL+"Iniciando jogo.....\n"+RESETAR)
+    
+    texto = PRETO+"""É a sua primeira noite em Wolvesville, você queria chegar de manhã mas o destino reservou outros planos. No hotel, você se tranca no quarto, e prepara sua 'super barricada de defesa', afinal, um detetive morto não desvenda caso nenhum."""+RESETAR
+    formatar_paragrafo(texto)
+    formatar_paragrafo(PRETO+"O sono demora, mas finalmente chega, e com ele a esperança de que esta seja sua única noite neste lugar."+RESETAR)
+    
     print("\n\n" + "="*80 + "")
-    meu_jogo = Jogo()
-
+    jogo = Jogo()
     print("\nDebug       ---- Estes sao os papeis dos suspeitos:") 
-    for jogador in meu_jogo.jogadores:
+    for jogador in jogo.jogadores:
         print(jogador) 
-    print("\n" + "="*80 + "\n\n")
+    print("\n" + "="*80 + "\n")
 
     # =============================================================
     # JOGO LOGICAS
@@ -162,9 +334,12 @@ if __name__ == "__main__":
         print(AMARELO + "="*80 + RESETAR)
 
         while True: # Dia
+
+            informacoes_noite(jogo, rodada)
+
             print("\nO que voce, detetive, deseja fazer?")
             print(AMARELO + "[A]" + RESETAR + " Atualizar lista de suspeitos")
-            print(AMARELO + "[B]" + RESETAR + " Finalizar investigacao")
+            print(AMARELO + "[B]" + RESETAR + " Finalizar investigação")
             print(AMARELO + "[C]" + RESETAR + " Passar para a noite (Dormir)")
             
             op = input(PRETO+"Sua escolha: "+RESETAR+"\n-> ").strip().upper()
@@ -175,25 +350,23 @@ if __name__ == "__main__":
 
             # --- B  ---
             elif op == 'B':
-                print(VERMELHO + "\nTEM CERTEZA? Essa opção finalizara o jogo, você não poderá voltar." + RESETAR)
+                print(VERMELHO + "\nTEM CERTEZA? Essa opção finalizará o jogo, você não poderá voltar." + RESETAR)
                 confirmar = input("(S/N)\n-> ").strip().upper()
                 if confirmar == 'S':
                     jogo_ativo = False # Parar o jogo
                     break
                 else:
-                    print("Investigacao retomada.")
+                    print("Investigação retomada.")
 
             # --- C  ---
             elif op == 'C':
                 print()
-                texto = PRETO + "Voce revisa suas notas e a noite cai em Wolvesville..." + RESETAR
-                formatar_paragrafo(texto)
+                formatar_paragrafo(PRETO + "Você revisa suas notas e a noite cai em Wolvesville..." + RESETAR)
                 break
 
             else:
                 print()
-                texto = VERMELHO + "Opcao invalida. Escolha A, B ou C." + RESETAR
-                formatar_paragrafo(texto)
+                formatar_paragrafo(VERMELHO + "Opção inválida. Escolha A, B ou C." + RESETAR)
 
         # --- Fim do Dia ---
         if not jogo_ativo:
@@ -211,4 +384,3 @@ if __name__ == "__main__":
     print(ROXO + "" + "="*80 + RESETAR)
     
     print()
-    finalizar_jogo(True)

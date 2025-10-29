@@ -1,0 +1,69 @@
+{
+    "fatos": {
+        "morte": "'{pessoa}' foi encontrado(a) morto(a).",
+        "causa_morte": "A Causa da Morte de '{pessoa}' foi: {causa}.",
+        "sobreviveu": "'{pessoa}' foi atacado(a) esta noite, mas sobreviveu.",
+        "sem_mortes": "Apesar dos ataques, ninguém morreu esta noite.",
+        "pistoleiro_revelado": "O Pistoleiro foi revelado! É o(a) {pessoa}."
+    },
+
+    "pistas_logicas": {
+        "tipo1_disj_simples": "'{p1}' ou '{p2}' é o '{papel}'",
+        "tipo2_disj_tripla": "'{p1}' ou '{p2}' ou '{p3}' é o '{papel}'",
+        "tipo3_negacao": "'{p1}' não é o '{papel}'",
+        "tipo4_afirm_equipe": "'{p1}' é da equipe {equipe}.",
+        "tipo5_cond_simples": "Se '{p1}' é '{papel1}', então '{p2}' é o '{papel2}'",
+        "tipo6_cond_negacao": "Se '{p1}' é '{papel1}', então '{p2}' não é o '{papel_falso}'",
+        "tipo7_cond_composta": "Se '{p1}' é da equipe {equipe1} e '{p2}' é da equipe {equipe2}, então '{p3}' é o '{papel}'"
+    },
+
+    "pistas_eventos": {
+        "vidente_equipe": "O Vidente investigou alguém esta noite e descobriu que essa pessoa é da equipe {equipe}.",
+        "vidente_papel": "O Vidente teve uma visão clara e descobriu o papel de alguém: {papel}.",
+        "bruxa_uso": "Há evidências de que a Bruxa usou uma de suas poções esta noite."
+    },
+
+    "ruido": {
+        "locais_corpo": [
+            "O corpo foi encontrado no Parque Central",
+            "O corpo foi encontrado no Hospital",
+            "O corpo foi encontrado na Praça da Igreja",
+            "O corpo foi encontrado perto da antiga fábrica",
+            "O corpo foi encontrado na rua de sua casa",
+            "O corpo foi encontrado em frente ao mercado"
+        ],
+        "testemunha_vulto": [
+            "Uma testemunha viu uma figura de casaco fugindo do local por volta das 2h da manhã.",
+            "Um morador relatou ter ouvido gritos perto do local por volta das 3h da manhã.",
+            "Uma figura suspeita foi vista rondando o local pouco antes do amanhecer."
+        ],
+        "pessoa_abalada": [
+            "'{pessoa_viva}' parece muito nervoso(a) esta manhã, mais que o normal.",
+            "'{pessoa_viva}' foi visto(a) discutindo rispidamente com '{outra_pessoa_viva}' hoje cedo."
+        ],
+        "clima": [
+            "O dia amanheceu chuvoso e com uma neblina pesada.",
+            "Um sol forte brilha hoje, o que parece incomodar alguns moradores.",
+            "O tempo está estranhamente parado, sem vento algum."
+        ],
+        "objetos_ruido": [
+            "um botão dourado",
+            "uma pena preta",
+            "uma carta de baralho (Rei de Espadas)",
+            "um pedaço de tecido rasgado"
+        ],
+        "objetos_reais": {
+            "Bruxa": "um pedaço de vidro quebrado, com um líquido roxo residual",
+            "Lobisomem": "tufos de pelos de animal não identificados",
+            "Pistoleiro": "uma cápsula de bala única, de um calibre incomum"
+        },
+        "template_objeto": "Um objeto estranho foi encontrado na cena: {objeto}."
+    },
+
+    "lembretes": [
+        "Lembrete: Se o Pistoleiro atirar, sua identidade será revelada.",
+        "Lembrete: A Bruxa só pode usar cada poção (Cura e Veneno) uma vez.",
+        "Lembrete: Se a bruxa usar o veneno e o médico não salvar a pessoa escolhida, então a pessoa escolhida irá morrer",
+        "Lembrete: Se a bruxa usar a sua cura, não haverá mortes."
+    ]
+}
