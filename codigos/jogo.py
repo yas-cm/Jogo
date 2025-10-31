@@ -60,9 +60,9 @@ class Jogo:
             self.jogadores.append(jogador_objeto)
 
     # Executa todas as acoes da noite (Lobo, Medico, Vidente, etc), e armazena os resultados em self.eventos_noite.
-    def simular_noite(self):
+    def simular_noite(self, rodada):
 
-        print("\n           --- Debug Iniciando simulacao da noite...")
+        print(f"\nDebug       ---- Iniciando simulacao da noite {rodada}...")
         
         self.eventos_noite = {
             "mortos": [],                 # Lista de nomes (str) de quem morreu
@@ -124,6 +124,10 @@ class Jogo:
         if vidente:
             # Vidente nao pode se investigar
             alvos_possiveis = [j for j in vivos if j != vidente]
+
+            if rodada == 1:
+                alvos_possiveis = [j for j in alvos_possiveis if not isinstance(j, Lobisomem)]
+
             if alvos_possiveis:
                 alvo_vidente_obj = random.choice(alvos_possiveis)
                 # O metodo investigar() retorna o papel (str) do alvo
@@ -131,18 +135,18 @@ class Jogo:
                 
                 if random.random() < 0.75: # 75% de chance de ser a equipe
                     if info_vidente == "Lobisomem":
-                        pista = TEXTOS["pistas_eventos"]["vidente_equipe"].format(equipe="Ameaça")
+                        pista = TEXTOS["pistas_eventos"]["vidente_equipe"].format(pessoa=alvo_vidente_obj.nome, equipe="Ameaça")
                     elif info_vidente == "Pistoleiro" or info_vidente == "Bruxa":
-                        pista = TEXTOS["pistas_eventos"]["vidente_equipe"].format(equipe="Neutro")
+                        pista = TEXTOS["pistas_eventos"]["vidente_equipe"].format(pessoa=alvo_vidente_obj.nome, equipe="Neutro")
                     else:
-                        pista = TEXTOS["pistas_eventos"]["vidente_equipe"].format(equipe="Inocente")
+                        pista = TEXTOS["pistas_eventos"]["vidente_equipe"].format(pessoa=alvo_vidente_obj.nome, equipe="Inocente")
                 else:
-                    pista = TEXTOS["pistas_eventos"]["vidente_papel"].format(papel=info_vidente) 
+                    pista = TEXTOS["pistas_eventos"]["vidente_papel"].format(pessoa=alvo_vidente_obj.nome, papel=info_vidente)
 
                 self.eventos_noite["pistas_vidente"].append(pista)
                 # O Debug continua o mesmo
-                print(f"\n        --- Debug [jogo.py]: Vidente investigou {alvo_vidente_obj.nome} e descobriu: {info_vidente}")
-                print(f"        --- Debug [jogo.py]: Pista gerada para o detetive: {pista}\n")
+                print(f"\nDebug       ----  Vidente investigou {alvo_vidente_obj.nome} e descobriu: {info_vidente}")
+                print(f"Debug       ----  Pista gerada para o detetive: {pista}\n")
 
         # --- Ação da Bruxa ---            
         if bruxa:
@@ -150,21 +154,23 @@ class Jogo:
             
             # 25% de chance de Cura
             if chance < 0.25 and bruxa.pocao_cura:
-                bruxa_usou_cura_global = bruxa.usar_cura()
-                if bruxa_usou_cura_global:
+                cura_bruxa = bruxa.usar_cura()
+                if cura_bruxa:
                     self.eventos_noite["eventos_bruxa"].append("cura")
-                    print(f"\n    --- Debug: Bruxa ({bruxa.nome}) usou a POCAo DE CURA.\n")
+                    print(f"\nDebug       ----  Bruxa ({bruxa.nome}) usou a POCAo DE CURA.\n")
             
             # 25% de chance de Veneno (entre 0.25 e 0.50)
             elif chance > 0.25 and chance < 0.50 and bruxa.pocao_veneno:
                 alvos_possiveis = [j for j in vivos if j != bruxa] # Nao pode se envenenar
+                if rodada == 1:
+                    alvos_possiveis = [j for j in alvos_possiveis if not isinstance(j, Lobisomem)]
                 if alvos_possiveis:
                     alvo_escolhido = random.choice(alvos_possiveis)
                     alvo_bruxa_veneno = bruxa.usar_veneno(alvo_escolhido)
                     if alvo_bruxa_veneno:
                         ataques_da_noite[alvo_bruxa_veneno] = "Envenenamento"
                         self.eventos_noite["eventos_bruxa"].append("veneno")
-                        print(f"\n    --- Debug: Bruxa ({bruxa.nome}) usou VENENO em {alvo_bruxa_veneno.nome}.\n")
+                        print(f"\nDebug       ----  Bruxa ({bruxa.nome}) usou VENENO em {alvo_bruxa_veneno.nome}.\n")
                         
         # --- Ação do Pistoleiro ---
         if pistoleiro and pistoleiro.balas > 0:
@@ -178,7 +184,7 @@ class Jogo:
                         # Salva a pista da revelação
                         pista_pistoleiro = TEXTOS["fatos"]["pistoleiro_revelado"].format(pessoa=pistoleiro.nome)
                         self.eventos_noite["eventos_pistoleiro"].append(pista_pistoleiro)
-                        print(f"    --- Debug [jogo.py]: Pistoleiro ({pistoleiro.nome}) ATIROU em {alvo_pistoleiro.nome}.")
+                        print(f"Debug       ----  Pistoleiro ({pistoleiro.nome}) ATIROU em {alvo_pistoleiro.nome}.")
 
         # Quem foi salvo pelo medico?
         salvos_pelo_medico = set()
@@ -193,7 +199,7 @@ class Jogo:
             if alvo_obj in salvos_pelo_medico:
                 self.eventos_noite["sobreviventes"].append(alvo_obj.nome)
                 personagem_salvo = True
-                print(f"Debug [jogo.py]: {alvo_obj.nome} foi salvo pelo Medico.")
+                print(f"Debug       ----  {alvo_obj.nome} foi salvo pelo Medico.")
 
             # Bruxa curou?
             if cura_bruxa:
@@ -209,7 +215,7 @@ class Jogo:
                 info_morte = {"pessoa": alvo_obj.nome, "causa": causa_da_morte}
                 self.eventos_noite["mortos"].append(info_morte)
 
-        print(f"Debug [jogo.py]: Simulacao finalizada. Mortos (info): {self.eventos_noite['mortos']}, Sobreviventes: {self.eventos_noite['sobreviventes']}")
+        print(f"Debug       ----  Simulacao finalizada. Mortos (info): {self.eventos_noite['mortos']}, Sobreviventes: {self.eventos_noite['sobreviventes']}")
 
 def lista_suspeitos(default):
     print(CIANO+"Lista de suspeitos"+RESETAR)
@@ -254,9 +260,8 @@ def informacoes_noite(jogo, rodada):
     texto = """No fim do dia, após várias entrevistas com os moradores (suspeitos), retorna ao hotel para organizar o que coletou."""+RESETAR
     formatar_paragrafo(texto)
     print(AZUL+"\nInformações coletadas:"+RESETAR)
-
-    pista = gerar_pista(jogo, rodada)
-    formatar_paragrafo(pista)
+    print()
+    gerar_pista(jogo, rodada)
     
 # Contexto e tutorial inicial
 def inicio():
@@ -330,14 +335,17 @@ if __name__ == "__main__":
     rodada = 1
     pontuacao = 0
     palpites_jogador = {}
+    formatar_paragrafo(PRETO + "A noite cai pela primeira vez em Wolvesville..." + RESETAR)
+    time.sleep(1)
+    print()
+    jogo.simular_noite(rodada)
 
     while jogo_ativo:
         print(AMARELO + f"\n\t\t\t\tDIA {rodada}" + RESETAR)
         print(AMARELO + "="*80 + RESETAR)
-
+        informacoes_noite(jogo, rodada)
+        
         while True: # Dia
-
-            informacoes_noite(jogo, rodada)
 
             print("\nO que voce, detetive, deseja fazer?")
             print(AMARELO + "[A]" + RESETAR + " Atualizar lista de suspeitos")
@@ -375,11 +383,13 @@ if __name__ == "__main__":
             break
 
         # Noite
+        rodada += 1
         print(AZUL + f"\n\n\t\t\t\tNOITE {rodada}" + RESETAR)
         print(AZUL + "="*80 + RESETAR)
         time.sleep(2) # Pausa dramática
         print("Auuuuuuuuuuuuuuuuuuuuuuuuu")
-        rodada += 1
+        
+        jogo.simular_noite(rodada)
 
     print()
     print(ROXO + "A investigacao foi encerrada." + RESETAR)

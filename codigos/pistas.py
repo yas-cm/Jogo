@@ -1,17 +1,19 @@
 # -*- coding: utf-8 -*-
 import json
 import random
+import textwrap
+import time
 from classes import *
 
 try:
-    with open('pistas.json', 'r', encoding='utf-8') as f:
+    with open('codigos/pistas.json', 'r', encoding='utf-8') as f:
         TEXTOS = json.load(f)
-    print("Debug [pistas.py]: Arquivo 'pistas.json' carregado com sucesso.")
+    print(f"Arquivo 'pistas.json' carregado com sucesso.")
 except FileNotFoundError:
-    print("ERRO CRITICO [pistas.py]: Arquivo 'pistas.json' nao encontrado!")
+    print(f"ERRO CRITICO [pistas.py]: Arquivo 'pistas.json' nao encontrado no caminho!")
     TEXTOS = {} # Define um dicionario vazio para evitar que o resto quebre
 except json.JSONDecodeError:
-    print("ERRO CRITICO [pistas.py]: 'pistas.json' contem um erro de sintaxe (JSON invalido)!")
+    print(f"ERRO CRITICO [pistas.py]: 'pistas.json' contem um erro de sintaxe (JSON invalido)!")
     TEXTOS = {}
 
 PAPEIS_PARA_PISTAS = [
@@ -24,6 +26,15 @@ PAPEIS_PARA_PISTAS = [
 ]
 
 EQUIPES_PARA_PISTAS = ["Inocente", "Ameaca", "Neutro"]
+
+anotacoes = {}
+
+def formatar_paragrafo(texto):
+    texto_formatado = textwrap.fill(texto, width=80, replace_whitespace=False)
+    for letra in texto_formatado:
+        print(letra, end='', flush=True) 
+        time.sleep(0.05)
+    print()
 
 def _obter_objs_aleatorios(lista_vivos_obj, qtd=1):
     if len(lista_vivos_obj) < qtd:
@@ -43,8 +54,11 @@ def obter_papel_aleatorio(excluir=[]):
         return random.choice(PAPEIS_PARA_PISTAS) # Fallback
     return random.choice(papeis_disponiveis)
 
-def obter_equipe_aleatoria():
-    return random.choice(EQUIPES_PARA_PISTAS)
+def obter_equipe_aleatoria(excluir=[]):
+    equipes_disponiveis = [e for e in EQUIPES_PARA_PISTAS if e not in excluir]
+    if not equipes_disponiveis:
+        return random.choice(EQUIPES_PARA_PISTAS) # Fallback
+    return random.choice(equipes_disponiveis)
 
 def _obter_pistas_fatos(eventos):
     pistas_fatos = []
@@ -58,25 +72,30 @@ def _obter_pistas_fatos(eventos):
             # Morte
             pista_m = TEXTOS["fatos"]["morte"].format(pessoa=pessoa_morta)
             pistas_fatos.append(pista_m)
+            formatar_paragrafo(pista_m)
             
             # Causa 
             pista_c = TEXTOS["fatos"]["causa_morte"].format(pessoa=pessoa_morta, causa=causa_morte)
             pistas_fatos.append(pista_c)
+            formatar_paragrafo(pista_c)
 
     # --- Sobreviventes ---
     if eventos["sobreviventes"]:
         for nome_sobrevivente in eventos["sobreviventes"]:
             pista = TEXTOS["fatos"]["sobreviveu"].format(pessoa=nome_sobrevivente)
             pistas_fatos.append(pista)
+            formatar_paragrafo(pista)
     
     # --- Revelação do Pistoleiro ---
     if eventos["eventos_pistoleiro"]:
         for pista in eventos["eventos_pistoleiro"]:
             pistas_fatos.append(pista)
+            formatar_paragrafo(pista)
             
     if not eventos["mortos"] and not eventos["sobreviventes"]:
         pista = TEXTOS["fatos"]["sem_mortes"]
         pistas_fatos.append(pista)
+        formatar_paragrafo(pista)
 
     return pistas_fatos
 
@@ -87,11 +106,13 @@ def _obter_pistas_eventos(eventos):
     if eventos["pistas_vidente"]:
         for pista in eventos["pistas_vidente"]:
             pistas_eventos.append(pista)
+            formatar_paragrafo(pista)
 
     # --- Uso da Bruxa ---
     if eventos["eventos_bruxa"]:
         pista = TEXTOS["pistas_eventos"]["bruxa_uso"]
         pistas_eventos.append(pista)
+        formatar_paragrafo(pista)
         
     return pistas_eventos
 
@@ -212,13 +233,15 @@ def _gerar_pistas_logicas(personagens_vivos_obj, qtd=3):
 
             if pista_gerada and pista_gerada not in pistas_logicas:
                 pistas_logicas.append(pista_gerada)
-        
+                formatar_paragrafo(pista_gerada)
+
         except Exception as e:
             print(f"Erro ao gerar pista logica '{tipo_sorteado}': {e}")
             
     return pistas_logicas
 
-def _gerar_pistas_ruido(personagens_vivos_obj, qtd=2):
+def _gerar_pistas_ruido(personagens_vivos_obj):
+    qtd = random.randint(0,2)
     print(f"Debug [pistas.py]: Gerando {qtd} pistas de Ruído...")
     pistas_ruido = []
     
@@ -253,6 +276,7 @@ def _gerar_pistas_ruido(personagens_vivos_obj, qtd=2):
             
             if pista_gerada:
                  pistas_ruido.append(pista_gerada)
+                 formatar_paragrafo(pista_gerada)
         
         except Exception as e:
             print(f"Erro ao gerar pista de ruido '{tipo_sorteado}': {e}")
@@ -265,12 +289,11 @@ def gerar_pista(jogo_obj, rodada):
     vivos_obj = [j for j in jogo_obj.jogadores if j.esta_vivo] # Pega a lista de objetos de jogadores vivos
     
     qtd_logicas = 3
-    qtd_ruido = 2
     
     pistas_fatos = _obter_pistas_fatos(eventos) 
     pistas_eventos = _obter_pistas_eventos(eventos)
     pistas_logicas = _gerar_pistas_logicas(vivos_obj, qtd_logicas)
-    pistas_ruido = _gerar_pistas_ruido(vivos_obj, qtd_ruido)
+    pistas_ruido = _gerar_pistas_ruido(vivos_obj)
     
     # Juntar tudo
     todas_pistas = pistas_fatos + pistas_eventos + pistas_logicas + pistas_ruido
@@ -279,4 +302,5 @@ def gerar_pista(jogo_obj, rodada):
         return "A noite foi surpreendentemente calma. Nenhuma pista foi encontrada."
         
     # Retorna uma string unica, com cada pista formatada
-    return "\n".join(f"• {p}" for p in todas_pistas)
+    anotacoes[rodada] = "\n".join(f"• {p}" for p in todas_pistas)
+    # print(f"Debug ----                       \n{anotacoes}")

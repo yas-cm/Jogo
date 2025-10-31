@@ -93,8 +93,12 @@ class Pistoleiro(Personagem):
 
         if self.balas > 0:
             self.balas -= 1
-            self.identidade_revelada = True 
-            print(f"O Pistoleiro foi revelado! ({self.nome}) atirou em {alvo.nome}!")
+            if not self.identidade_revelada:
+                print(f"O Pistoleiro foi revelado! ({self.nome}) atirou em {alvo.nome}!")
+                self.identidade_revelada = True 
+            else:
+                print(f"O Pistoleiro ({self.nome}) atirou novamente, mirando em {alvo.nome}!")
+            
             print(f"Debug ----        Balas: {self.balas}")
             return alvo
         else:

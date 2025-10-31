@@ -8,18 +8,18 @@
     },
 
     "pistas_logicas": {
-        "tipo1_disj_simples": "'{p1}' ou '{p2}' é o '{papel}'",
-        "tipo2_disj_tripla": "'{p1}' ou '{p2}' ou '{p3}' é o '{papel}'",
-        "tipo3_negacao": "'{p1}' não é o '{papel}'",
+        "tipo1_disj_simples": "'{p1}' ou '{p2}' é o(a) '{papel}'",
+        "tipo2_disj_tripla": "'{p1}' ou '{p2}' ou '{p3}' é o(a) '{papel}'",
+        "tipo3_negacao": "'{p1}' não é o(a) '{papel}'",
         "tipo4_afirm_equipe": "'{p1}' é da equipe {equipe}.",
-        "tipo5_cond_simples": "Se '{p1}' é '{papel1}', então '{p2}' é o '{papel2}'",
-        "tipo6_cond_negacao": "Se '{p1}' é '{papel1}', então '{p2}' não é o '{papel_falso}'",
-        "tipo7_cond_composta": "Se '{p1}' é da equipe {equipe1} e '{p2}' é da equipe {equipe2}, então '{p3}' é o '{papel}'"
+        "tipo5_cond_simples": "Se '{p1}' é '{papel1}', então '{p2}' é o(a) '{papel2}'",
+        "tipo6_cond_negacao": "Se '{p1}' é '{papel1}', então '{p2}' não é o(a) '{papel_falso}'",
+        "tipo7_cond_composta": "Se '{p1}' é da equipe {equipe1} e '{p2}' é da equipe {equipe2}, então '{p3}' é o(a) '{papel}'"
     },
 
     "pistas_eventos": {
-        "vidente_equipe": "O Vidente investigou alguém esta noite e descobriu que essa pessoa é da equipe {equipe}.",
-        "vidente_papel": "O Vidente teve uma visão clara e descobriu o papel de alguém: {papel}.",
+        "vidente_equipe": "O Vidente investigou alguém esta noite e descobriu que o(a) {pessoa} é da equipe {equipe}.",
+        "vidente_papel": "O Vidente teve uma visão clara e descobriu o papel do(a) {pessoa}: {papel}.",
         "bruxa_uso": "Há evidências de que a Bruxa usou uma de suas poções esta noite."
     },
 
