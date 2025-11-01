@@ -3,7 +3,8 @@ import random
 from classes import *
 import textwrap
 import time
-from pistas import gerar_pista, TEXTOS
+import os
+from pistas import gerar_pista, TEXTOS, anotacoes, PAPEIS_PARA_PISTAS
 LARGURA_MAXIMA = 80
 
 PRETO = "\033[30m"
@@ -217,8 +218,9 @@ class Jogo:
 
         print(f"Debug       ----  Simulacao finalizada. Mortos (info): {self.eventos_noite['mortos']}, Sobreviventes: {self.eventos_noite['sobreviventes']}")
 
-def lista_suspeitos(default):
+def lista_suspeitos(default, jogo=None, palpites=None):
     print(CIANO+"Lista de suspeitos"+RESETAR)
+    print(PRETO + "--------------------------------------" + RESETAR)
     if default == True:
         formatar_paragrafo(PRETO+"Maria        ||  Cidadao")
         formatar_paragrafo("Isabella     ||  Lobisomem")
@@ -227,6 +229,77 @@ def lista_suspeitos(default):
         formatar_paragrafo("Carlos       ||  ")
         formatar_paragrafo("Victor       ||  Vidente")
         formatar_paragrafo("Guilherme    ||  "+RESETAR)
+    else:
+        for i, jogador in enumerate(jogo.jogadores):
+            nome = jogador.nome           
+            palpite_atual = palpites.get(nome, "...")
+            nome_formatado = f"[{i+1}] {nome:<10}"
+            print(PRETO + f"{nome_formatado} ||  {palpite_atual}" + RESETAR)
+    print(PRETO + "--------------------------------------" + RESETAR)
+
+def atualizar_lista_suspeitos(jogo_obj, palpites_jogador):
+    papeis_disponiveis = PAPEIS_PARA_PISTAS + ["Não sei"] # Adiciona a opção "Não sei"
+    
+    while True:
+        limpar_tela()
+        print(CIANO + "\t\tATUALIZAR LISTA DE SUSPEITOS" + RESETAR)
+        print("Estes são seus palpites atuais:\n")
+        
+        lista_suspeitos(default=False, jogo=jogo_obj, palpites=palpites_jogador)
+        
+        print("\n" + CIANO + "Qual suspeito você quer atualizar?" + RESETAR)
+        op_suspeito = input(PRETO + "Digite o número [1-7] ou [S] para Sair: " + RESETAR + "-> ").strip().upper()
+
+        if op_suspeito == 'S':
+            break 
+
+        # --- Validação do Suspeito ---
+        try:
+            indice = int(op_suspeito) - 1
+            if 0 <= indice < len(jogo_obj.jogadores):
+                suspeito_obj = jogo_obj.jogadores[indice]
+            else:
+                print(VERMELHO + "Número inválido." + RESETAR)
+                time.sleep(1)
+                continue
+        except ValueError:
+            print(VERMELHO + "Entrada inválida. Digite um número." + RESETAR)
+            time.sleep(1)
+            continue 
+
+        # --- Escolha do Papel ---
+        limpar_tela()
+        print(CIANO + f"Atualizando palpite para: {AMARELO}{suspeito_obj.nome}{RESETAR}")
+        print("Quais são suas suspeitas sobre este jogador?\n")
+
+        # Mostra a lista de papéis numerada
+        for i, papel in enumerate(papeis_disponiveis):
+            print(PRETO + f"  [{i+1}] {papel}" + RESETAR)
+
+        op_papel = input(PRETO + "\nDigite o número do palpite: " + RESETAR + "-> ").strip()
+
+        # --- Validação do Papel ---
+        try:
+            indice_papel = int(op_papel) - 1
+            if 0 <= indice_papel < len(papeis_disponiveis):
+                papel_escolhido = papeis_disponiveis[indice_papel]
+                
+                # Salva o palpite no dicionário
+                if papel_escolhido == "Não sei":
+                    palpites_jogador[suspeito_obj.nome] = "..." # Reseta para o padrão
+                else:
+                    palpites_jogador[suspeito_obj.nome] = papel_escolhido
+                
+                print(VERDE + f"\nSalvo: {suspeito_obj.nome} || {papel_escolhido}" + RESETAR)
+                time.sleep(1.5)
+            else:
+                print(VERMELHO + "Número de papel inválido." + RESETAR)
+                time.sleep(1)
+        except ValueError:
+            print(VERMELHO + "Entrada inválida. Digite um número." + RESETAR)
+            time.sleep(1)
+
+    limpar_tela()
 
 def finalizar_jogo(default):
     formatar_paragrafo(CIANO+"Finalizar investigação"+RESETAR)
@@ -263,6 +336,77 @@ def informacoes_noite(jogo, rodada):
     print()
     gerar_pista(jogo, rodada)
     
+def limpar_tela():
+    os.system('cls' if os.name == 'nt' else 'clear')
+
+def mostrar_diario():
+    if not anotacoes:
+        print(VERMELHO + "\nO diário ainda está vazio. Nenhuma noite foi registrada." + RESETAR)
+        time.sleep(2)
+        return
+
+    nomes = ["Maria", "Isabella", "Angelina", "Diego", "Carlos", "Victor", "Guilherme"]
+    papeis = [
+    {"papel": "Cidadao Comum","descricao": "Não possui habilidades especiais." },
+    {"papel": "Medico","descricao": "Pode salvar uma pessoa por noite." },
+    {"papel": "Vidente", "descricao": "Pode descobrir o papel de um jogador por noite." },
+    {"papel": "Pistoleiro","descricao": "Tem 2 balas para atirar em quem quiser." },
+    {"papel": "Bruxa","descricao": "Tem uma poção de cura e uma de veneno." },
+    {"papel": "Lobisomem","descricao": "Mata uma pessoa por noite." }
+    ]
+    total_paginas = len(anotacoes)+1
+    pagina_atual = total_paginas # Começa da noite mais recente
+
+    while True:
+        limpar_tela()
+        
+        # --- Cabeçalho e Conteúdo ---
+        print(AZUL + "="*80 + RESETAR)
+        print(AZUL + f"\n\t\t\tDIÁRIO DE INVESTIGAÇÃO" + RESETAR)
+
+        if pagina_atual == 1:
+            print("\nPrincipais suspeitos:")
+            for n in nomes:
+                print(f"- {n}")
+            print("\nPossíveis perfis:")
+            for p in papeis:
+                print(f"{p['papel']}: {p['descricao']}")
+            print()
+
+        else:
+            print(AZUL + f"--- NOITE {pagina_atual-1} ---" + RESETAR)
+            
+            print(anotacoes[pagina_atual-1]) 
+            
+        # --- Rodapé e Controles ---
+        print(AZUL + "\n" + "="*80 + RESETAR)
+        print(PRETO + f"Página {pagina_atual} de {total_paginas}" + RESETAR)
+        
+        controles = []
+        # So mostra [A] Anterior se nao estiver na pagina 1
+        if pagina_atual > 1:
+            controles.append(PRETO + " [A]" + RESETAR + " Anterior ")
+        # So mostra [P] Proxima se nao estiver na ultima pagina
+        if pagina_atual < total_paginas:
+            controles.append(PRETO + " [P]" + RESETAR + " Próxima ")
+        
+        controles.append(PRETO + " [S]" + RESETAR + " Sair do Diário ")
+        
+        print(" | ".join(controles))
+        
+        op = input(PRETO + "Sua escolha: " + RESETAR + "-> ").strip().upper()
+
+        if op == 'S':
+            limpar_tela() # Limpa o diário antes de sair
+            break # Volta para o menu principal
+        elif op == 'A' and pagina_atual > 1:
+            pagina_atual -= 1
+        elif op == 'P' and pagina_atual < total_paginas:
+            pagina_atual += 1
+        else:
+            print(VERMELHO + "Opção inválida." + RESETAR)
+            time.sleep(1)
+
 # Contexto e tutorial inicial
 def inicio():
     # Contexto
@@ -295,8 +439,11 @@ def inicio():
     # --- B ---
     texto = ROXO+"""B. Finalizar investigação: """+RESETAR+"""Esta opção encerra o jogo. Ao selecioná-la e confirmar, sua pontuação total será revelada, mostrando o detalhamento dos seus acertos."""
     formatar_paragrafo(texto)
-    print(PRETO+"Exemplo da finalização da investigação:"+RESETAR)
+    print()
+    print(ROXO+"Exemplo da finalização da investigação:"+RESETAR)
+    print()
     finalizar_jogo(True)
+    
     print(PRETO+"="*80+RESETAR)
 
     input(PRETO+"\nClique 'Enter' para continuar\n"+RESETAR)
@@ -305,6 +452,12 @@ def inicio():
     texto = ROXO+"""C. Passar para a noite (dormir): """+RESETAR+"""Passa para a proxima noite"""
     formatar_paragrafo(texto)
     print()
+
+    # --- D ---
+    texto = ROXO+"""D. Ver diário de investigação: """+RESETAR+"""Mostra lista de pistas de cada noite"""
+    formatar_paragrafo(texto)
+    print()
+
     print(PRETO+"="*80+RESETAR)
 
 if __name__ == "__main__":
@@ -349,20 +502,23 @@ if __name__ == "__main__":
 
             print("\nO que voce, detetive, deseja fazer?")
             print(AMARELO + "[A]" + RESETAR + " Atualizar lista de suspeitos")
-            print(AMARELO + "[B]" + RESETAR + " Finalizar investigação")
+            print(AMARELO + "[B]" + RESETAR + " Finalizar investigação" + PRETO + " (essa opção finalizará o jogo)" + RESETAR)
             print(AMARELO + "[C]" + RESETAR + " Passar para a noite (Dormir)")
+            print(AMARELO + "[D]" + RESETAR + " Ver diário de investigação")
+            
             
             op = input(PRETO+"Sua escolha: "+RESETAR+"\n-> ").strip().upper()
             
             # --- A ---
             if op == 'A':
                 print("\nOpção A\n")
+                atualizar_lista_suspeitos(jogo, palpites_jogador)
 
             # --- B  ---
             elif op == 'B':
                 print(VERMELHO + "\nTEM CERTEZA? Essa opção finalizará o jogo, você não poderá voltar." + RESETAR)
                 confirmar = input("(S/N)\n-> ").strip().upper()
-                if confirmar == 'S':
+                if confirmar == 'S' or confirmar == "SIM":
                     jogo_ativo = False # Parar o jogo
                     break
                 else:
@@ -374,9 +530,13 @@ if __name__ == "__main__":
                 formatar_paragrafo(PRETO + "Você revisa suas notas e a noite cai em Wolvesville..." + RESETAR)
                 break
 
+            # --- D ---
+            elif op == 'D':
+                mostrar_diario()
+
             else:
                 print()
-                formatar_paragrafo(VERMELHO + "Opção inválida. Escolha A, B ou C." + RESETAR)
+                formatar_paragrafo(VERMELHO + "Opção inválida. Escolha A, B, C ou D." + RESETAR)
 
         # --- Fim do Dia ---
         if not jogo_ativo:

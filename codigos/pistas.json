@@ -47,9 +47,13 @@
             "O tempo está estranhamente parado, sem vento algum."
         ],
         "objetos_ruido": [
-            "um botão dourado",
-            "uma pena preta",
+            "um isqueiro quebrado",
+            "uma peça de xadrez (Rei)",
             "uma carta de baralho (Rei de Espadas)",
+            "uma carta de baralho (Ás de Ouro)",
+            "uma carta de baralho (Três de Espadas)",
+            "uma carta de baralho (Sete de Paus",
+            "uma carta de baralho (Valete de Copas)",
             "um pedaço de tecido rasgado"
         ],
         "template_objeto": "Um objeto estranho foi encontrado na cena: {objeto}."
