@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
 import random
 from classes import *
-import time # Usado apenas no __main__
+import time 
 from pistas import TEXTOS 
-
-# Importa a interface que acabamos de criar
 import interface as ui
 
 class Jogo:
@@ -30,7 +28,9 @@ class Jogo:
     def distribui_papeis(self):
         papeis_embaralhados = self.papeis_da_partida[:] 
         random.shuffle(papeis_embaralhados)
-        for nome_personagem, classe_papel in zip(self.nomes, papeis_embaralhados):     
+        nomes_embaralhados = self.nomes[:]
+        random.shuffle(nomes_embaralhados)
+        for nome_personagem, classe_papel in zip(nomes_embaralhados, papeis_embaralhados):     
             jogador_objeto = classe_papel(nome_personagem)
             self.jogadores.append(jogador_objeto)
 
@@ -122,6 +122,8 @@ class Jogo:
         if pistoleiro and pistoleiro.balas > 0:
             if random.random() < 0.50: 
                 alvos_possiveis = [j for j in vivos if j != pistoleiro]
+                if rodada == 1:
+                    alvos_possiveis = [j for j in alvos_possiveis if not isinstance(j, Lobisomem)]
                 if alvos_possiveis:
                     alvo_escolhido = random.choice(alvos_possiveis)
                     alvo_pistoleiro = pistoleiro.atirar(alvo_escolhido)

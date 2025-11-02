@@ -6,7 +6,6 @@ import time
 from classes import *
 
 try:
-    # --- Mantido (presume que 'codigos/pistas.json' é o caminho certo) ---
     with open('codigos/pistas.json', 'r', encoding='utf-8') as f:
         TEXTOS = json.load(f)
     # Mensagem de debug removida
@@ -26,15 +25,11 @@ PAPEIS_PARA_PISTAS = [
     Cidadao("").papel
 ]
 
-EQUIPES_PARA_PISTAS = ["Inocente", "Ameaca", "Neutro"]
+EQUIPES_PARA_PISTAS = ["Inocente", "Ameaça", "Neutro"]
 
 anotacoes = {}
 
 def formatar_paragrafo(texto):
-    """
-    Imprime o texto formatado (largura 80) letra por letra.
-    Isso é o que exibe as "Informações coletadas" na tela.
-    """
     texto_formatado = textwrap.fill(texto, width=80, replace_whitespace=False)
     for letra in texto_formatado:
         print(letra, end='', flush=True) 
@@ -119,7 +114,7 @@ def _obter_pistas_eventos(eventos):
         
     return pistas_eventos
 
-def _gerar_pistas_logicas(personagens_vivos_obj, rodada, qtd=4):
+def _gerar_pistas_logicas(personagens_vivos_obj, rodada, qtd):
     pistas_logicas = []
     
     tipos_disponiveis = list(TEXTOS["pistas_logicas"].keys())
@@ -279,9 +274,8 @@ def gerar_pista(jogo_obj, rodada):
     eventos = jogo_obj.eventos_noite 
     vivos_obj = [j for j in jogo_obj.jogadores if j.esta_vivo] 
     
-    qtd_logicas = 3
+    qtd_logicas = 4
     
-    # A função formatar_paragrafo() é chamada DENTRO de cada uma dessas funções
     pistas_fatos = _obter_pistas_fatos(eventos) 
     pistas_eventos = _obter_pistas_eventos(eventos)
     pistas_logicas = _gerar_pistas_logicas(vivos_obj, rodada, qtd_logicas)
