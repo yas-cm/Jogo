@@ -4,8 +4,8 @@ class Personagem:
     
     Atributos:
         nome (str): O nome do jogador.
-        perfil (str): A funcao (ex: "Medico").
-        equipe (str): A equipe ("Inocente", "Neutro" ou "Ameaca").
+        perfil (str): A função (ex: "Medico").
+        equipe (str): A equipe ("Inocente", "Neutro" ou "Ameaça").
         esta_vivo (bool): O estado do jogador (vivo ou morto).
     """
     def __init__(self, nome, papel, equipe):
@@ -19,7 +19,6 @@ class Personagem:
         self.esta_vivo = False
 
     def __str__(self):
-        # Debug
         status = "Vivo" if self.esta_vivo else "Morto"
         return f"[{self.nome} | Papel: {self.papel} | Status: {status}]"
 
@@ -30,9 +29,7 @@ class Cidadao(Personagem):
     O Cidadao Comum. Nao possui habilidades especiais.
     """
     def __init__(self, nome):
-        # 'super()' chama o construtor da classe 'Personagem'
         super().__init__(nome, "Cidadao Comum", "Inocente")
-        # Nenhuma habilidade extra.
 
 class Medico(Personagem):
     """
@@ -62,7 +59,6 @@ class Vidente(Personagem):
         Revela o papel de um jogador (objeto Personagem).
         """
         if self.esta_vivo:
-            # Retorna o papel do alvo para o motor do jogo
             return alvo.papel
         return None
 
@@ -126,14 +122,14 @@ class Bruxa(Personagem):
         else:
             return False
 
-# --- AMEAcA ---
+# --- AMEAÇA ---
 
 class Lobisomem(Personagem):
     """
     O Lobisomem. Mata uma pessoa por noite.
     """
     def __init__(self, nome):
-        super().__init__(nome, "Lobisomem", "Ameaca")
+        super().__init__(nome, "Lobisomem", "Ameaça")
 
     def matar(self, alvo):
         """Define o alvo do ataque do Lobisomem."""

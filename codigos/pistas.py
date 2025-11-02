@@ -8,12 +8,11 @@ from classes import *
 try:
     with open('codigos/pistas.json', 'r', encoding='utf-8') as f:
         TEXTOS = json.load(f)
-    # Mensagem de debug removida
 except FileNotFoundError:
-    print(f"ERRO CRITICO [pistas.py]: Arquivo 'pistas.json' nao encontrado no caminho!")
+    print(f"ERRO CRÍTICO [pistas.py]: Arquivo 'pistas.json' não encontrado no caminho!")
     TEXTOS = {} 
 except json.JSONDecodeError:
-    print(f"ERRO CRITICO [pistas.py]: 'pistas.json' contem um erro de sintaxe (JSON invalido)!")
+    print(f"ERRO CRÍTICO [pistas.py]: 'pistas.json' contém um erro de sintaxe (JSON inválido)!")
     TEXTOS = {}
 
 PAPEIS_PARA_PISTAS = [
@@ -51,13 +50,13 @@ def obter_personagens_aleatorios(lista_vivos_obj, qtd=1):
 def obter_papel_aleatorio(excluir=[]):
     papeis_disponiveis = [p for p in PAPEIS_PARA_PISTAS if p not in excluir]
     if not papeis_disponiveis:
-        return random.choice(PAPEIS_PARA_PISTAS) # Fallback
+        return random.choice(PAPEIS_PARA_PISTAS)
     return random.choice(papeis_disponiveis)
 
 def obter_equipe_aleatoria(excluir=[]):
     equipes_disponiveis = [e for e in EQUIPES_PARA_PISTAS if e not in excluir]
     if not equipes_disponiveis:
-        return random.choice(EQUIPES_PARA_PISTAS) # Fallback
+        return random.choice(EQUIPES_PARA_PISTAS)
     return random.choice(equipes_disponiveis)
 
 def _obter_pistas_fatos(eventos):
@@ -176,7 +175,6 @@ def _gerar_pistas_logicas(personagens_vivos_obj, rodada, qtd):
                     p1 = jogadores[0]
                     p2 = jogadores[1]
                     
-                    # Usa os papéis reais de P1 e P2 para criar uma pista (True -> True)
                     papel1_real = p1.papel
                     papel2_real = p2.papel
                     
@@ -192,9 +190,7 @@ def _gerar_pistas_logicas(personagens_vivos_obj, rodada, qtd):
                     p1 = jogadores[0]
                     p2 = jogadores[1]
                     
-                    # Usa o papel real de P1
                     papel1_real = p1.papel
-                    # Pega um papel que P2 realmente NÃO é
                     papel_falso_para_p2 = obter_papel_aleatorio(excluir=[p2.papel, "Lobisomem"])
                     
                     pista_gerada = TEXTOS["pistas_logicas"]["tipo6_cond_negacao"].format(
@@ -210,7 +206,6 @@ def _gerar_pistas_logicas(personagens_vivos_obj, rodada, qtd):
                     p2 = jogadores[1]
                     p3 = jogadores[2]
                     
-                    # Usa as equipes e papéis reais dos jogadores
                     equipe1_real = p1.equipe
                     equipe2_real = p2.equipe
                     papel_real_p3 = p3.papel
@@ -226,7 +221,7 @@ def _gerar_pistas_logicas(personagens_vivos_obj, rodada, qtd):
                 formatar_paragrafo(pista_gerada)
 
         except Exception as e:
-            print(f"Erro ao gerar pista logica '{tipo_sorteado}': {e}")
+            print(f"Erro ao gerar pista lógica '{tipo_sorteado}': {e}")
             
     return pistas_logicas
 
@@ -265,7 +260,7 @@ def _gerar_pistas_ruido(personagens_vivos_obj):
                  formatar_paragrafo(pista_gerada)
         
         except Exception as e:
-            print(f"Erro ao gerar pista de ruido '{tipo_sorteado}': {e}")
+            print(f"Erro ao gerar pista de ruído '{tipo_sorteado}': {e}")
              
     return pistas_ruido
 
@@ -284,8 +279,6 @@ def gerar_pista(jogo_obj, rodada):
     todas_pistas = pistas_fatos + pistas_eventos + pistas_logicas + pistas_ruido
     
     if not todas_pistas:
-        # Fallback caso nada aconteça
         formatar_paragrafo("A noite foi surpreendentemente calma. Nenhuma pista foi encontrada.")
         
-    # Salva tudo no diário
     anotacoes[rodada] = "\n".join(f"• {p}" for p in todas_pistas)

@@ -39,19 +39,18 @@ def formatar_paragrafo(texto, lento=True, recuo_especial=False):
     else:
         if recuo_especial:
             linhas_formatadas = []
-            linhas_originais = texto.split('\n') # Quebra pelas pistas (•)
+            linhas_originais = texto.split('\n')
             
             for linha in linhas_originais:
-                # Aplica o textwrap em CADA pista, com recuo
                 linha_processada = textwrap.fill(
                     linha, 
                     width=LARGURA_MAXIMA, 
                     replace_whitespace=False,
-                    subsequent_indent="  " # Adiciona 2 espaços em linhas quebradas
+                    subsequent_indent="  " 
                 )
                 linhas_formatadas.append(linha_processada)
             
-            print("\n".join(linhas_formatadas)) # Imprime o diário formatado
+            print("\n".join(linhas_formatadas))
         
         else:
             texto_formatado = textwrap.fill(texto, width=LARGURA_MAXIMA, replace_whitespace=False)
@@ -87,7 +86,6 @@ def lista_suspeitos(default, jogo=None, palpites=None, final=False, lobo_morreu=
                 if palpite_atual == papel_real:
                     pontos_str = "(+10)"
                     if papel_real == "Lobisomem":
-                        # SÓ GANHA PONTO DO LOBO SE ELE NÃO MORREU
                         pontos_str = "(+30)" if not lobo_morreu else "(+0)" 
                     print(VERDE + f"{nome_formatado} ||  {palpite_formatado} {pontos_str}" + RESETAR)
                 
@@ -95,9 +93,8 @@ def lista_suspeitos(default, jogo=None, palpites=None, final=False, lobo_morreu=
                     print(PRETO + f"{nome_formatado} ||  {palpite_atual}" + RESETAR)
                 
                 else:
-                    pontos_str = "(-10)" # Penalidade aumentada
+                    pontos_str = "(-10)"
                     if palpite_atual == "Lobisomem": 
-                        # SÓ PERDE PONTO DO LOBO SE ELE NÃO MORREU
                         pontos_str = "(-30)" if not lobo_morreu else "(-10)" 
                     print(VERMELHO + f"{nome_formatado} ||  {palpite_formatado} {pontos_str}" + RESETAR)
             else:
@@ -216,7 +213,6 @@ def mostrar_diario(jogo_obj):
             
         else:
             print(AZUL + f"--- NOITE {pagina_atual-1} ---" + RESETAR)
-            # Ativa a formatação especial de recuo para o diário
             formatar_paragrafo(anotacoes[pagina_atual-1], lento=False, recuo_especial=True) 
             
         print(AZUL + "\n" + "="*80 + RESETAR)
@@ -245,7 +241,7 @@ def mostrar_diario(jogo_obj):
 
 def informacoes_noite(jogo, rodada):
     print()
-    texto = PRETO+"""O alívio de acordar dura pouco. Você liga o jornal e a primeira notícia te traz de volta a realidade. O trabalho começou."""
+    texto = PRETO+"""O alívio de acordar dura pouco. Você liga o jornal e a primeira notícia te traz de volta à realidade. O trabalho começou."""
     formatar_paragrafo(texto)
     texto = """No fim do dia, após várias entrevistas com os moradores (suspeitos), retorna ao hotel para organizar o que coletou."""+RESETAR
     formatar_paragrafo(texto)
@@ -258,7 +254,6 @@ def introducao():
     print("" + "="*80 +RESETAR)
     op = input(PRETO+"\nPara pular a contextualização, pressione 0\nPara continuar, pressione 'Enter' "+RESETAR)
     if op != '0':
-        # Contextualização
         print()
         print(PRETO+"="*80+RESETAR)
         texto = """Você é um detetive renomado, e seu novo caso o leva à misteriosa cidade de Wolvesville, onde eventos estranhos têm tirado o sono dos moradores."""
@@ -300,7 +295,7 @@ def introducao():
         texto = ROXO+"""C. Passar para a noite (dormir): """+RESETAR+"""Passa para a proxima noite"""
         formatar_paragrafo(texto)
         print()
-        texto = ROXO+"""D. Ver diário de investigação: """+RESETAR+"""Mostra lista de pistas de cada noite"""
+        texto = ROXO+"""D. Ver diário de investigação: """+RESETAR+"""Mostra todas as informações coletadas, inclusive os perfis identificados e pistas de cada noite."""
         formatar_paragrafo(texto)
         print()
         print(PRETO+"="*80+RESETAR)
@@ -320,12 +315,10 @@ def finalizar_jogo(default, jogo=None, palpites=None, rodada=0, lobo_morreu=Fals
         formatar_paragrafo(VERMELHO+"-30 pontos:"+RESETAR+" Ao identificar erroneamente o Lobisomem.")
         formatar_paragrafo(VERMELHO+"-5 pontos:"+RESETAR+" Por cada rodada (noite) que passa.")
         formatar_paragrafo(VERMELHO+"-5 pontos:"+RESETAR+" Por cada morte de inocentes.")
-        # [ALTERADO AQUI]
         formatar_paragrafo(VERMELHO+"-10 pontos:"+RESETAR+" Por cada perfil de suspeito identificado erroneamente.")
         formatar_paragrafo("Seu palpite:")
         lista_suspeitos(True)
         formatar_paragrafo("\nSua pontuação:")
-        # [ALTERADO AQUI] - Exemplo de pontuação atualizado
         formatar_paragrafo(VERDE+"+30 pontos +10 pontos"+VERMELHO+" -5 pontos -5 pontos -10 pontos -10 pontos -10 pontos"+RESETAR)
         formatar_paragrafo("Total: "+VERDE+"0 pontos"+RESETAR)
         return "SAIR" 
@@ -343,7 +336,6 @@ def finalizar_jogo(default, jogo=None, palpites=None, rodada=0, lobo_morreu=Fals
     resumo_bonus = []
     resumo_penalidades = []
     
-    # Flag para o Easter Egg
     acertou_todos = True 
 
     for jogador in jogo.jogadores:
@@ -363,9 +355,8 @@ def finalizar_jogo(default, jogo=None, palpites=None, rodada=0, lobo_morreu=Fals
                 resumo_bonus.append(f"+10 pts: Acertou {nome} ({papel_real})")
         
         elif palpite != "...":
-            acertou_todos = False # Errou pelo menos um
+            acertou_todos = False
             if papel_real == "Lobisomem":
-                # [ALTERADO AQUI]
                 pontuacao_total -= 10 
                 resumo_penalidades.append(f"-10 pts: Errou {nome} (Era {papel_real} e você palpitou {palpite})")
             elif palpite == "Lobisomem":
@@ -373,16 +364,14 @@ def finalizar_jogo(default, jogo=None, palpites=None, rodada=0, lobo_morreu=Fals
                     pontuacao_total -= 30 
                     resumo_penalidades.append(f"-30 pts: Acusou {nome} de ser o Lobo (Errado! Era {papel_real})")
                 else:
-                    # [ALTERADO AQUI]
-                    pontuacao_total -= 10 # Penalidade normal (aumentada) se o lobo já morreu
+                    pontuacao_total -= 10 
                     resumo_penalidades.append(f"-10 pts: Acusou {nome} de ser o Lobo (Errado! Era {papel_real})")
             else:
-                # [ALTERADO AQUI]
                 pontuacao_total -= 10 
                 resumo_penalidades.append(f"-10 pts: Errou {nome} (Era {papel_real} e você palpitou {palpite})")
         
         elif palpite == "...":
-            acertou_todos = False # Não palpitou em um, não é perfeito
+            acertou_todos = False
             
     
     penal_rodada = (rodada - 1) * 5 
@@ -392,7 +381,7 @@ def finalizar_jogo(default, jogo=None, palpites=None, rodada=0, lobo_morreu=Fals
 
     mortes_nao_ameaca = 0
     for j in jogo.jogadores:
-        if j.equipe != "Ameaca" and not j.esta_vivo:
+        if j.equipe != "Ameaça" and not j.esta_vivo:
             mortes_nao_ameaca += 1
     penal_mortes = 0
     if mortes_nao_ameaca > 0:
@@ -416,7 +405,6 @@ def finalizar_jogo(default, jogo=None, palpites=None, rodada=0, lobo_morreu=Fals
         print(VERDE+"+30 pontos:"+RESETAR+" Ao identificar corretamente o Lobisomem.")
         print(VERDE+"+10 pontos:"+RESETAR+" Por cada suspeito (não-lobisomem) identificado corretamente.")
         print(VERMELHO+"-30 pontos:"+RESETAR+" Ao identificar erroneamente o Lobisomem (acusar um inocente).")
-        # [ALTERADO AQUI]
         print(VERMELHO+"-10 pontos:"+RESETAR+" Por cada perfil de suspeito identificado erroneamente.")
         print(VERMELHO+"-5 pontos:"+RESETAR+" Por cada rodada (noite) que passa (a partir da Noite 2).")
         print(VERMELHO+"-5 pontos:"+RESETAR+" Por cada morte de inocentes.\n")
@@ -429,7 +417,6 @@ def finalizar_jogo(default, jogo=None, palpites=None, rodada=0, lobo_morreu=Fals
         print(VERMELHO + f"Mortes de Inocentes: {mortes_nao_ameaca} (-{penal_mortes} pts)" + RESETAR)
 
         print("\n" + ROXO + "="*30)
-        # Mensagem do Easter Egg
         if bonus_easter_egg:
             print(AMARELO + "INVESTIGAÇÃO IMPECÁVEL! (Bônus x2)" + RESETAR)
             
@@ -451,7 +438,6 @@ def finalizar_jogo(default, jogo=None, palpites=None, rodada=0, lobo_morreu=Fals
         if op == '1':
             limpar_tela()
             print(CIANO + "--- PAPÉIS REAIS ---" + RESETAR)
-            # PAPÉIS REAIS
             for j in jogo.jogadores:
                 status = PRETO + "(Morto)" if not j.esta_vivo else ""
                 print(f"  {j.nome:<12} || {j.papel} {status}" + RESETAR)
@@ -473,9 +459,7 @@ def finalizar_jogo(default, jogo=None, palpites=None, rodada=0, lobo_morreu=Fals
             exibir_tela_final()
         
         elif op == '2':
-            # Chama a função de diário existente
             mostrar_diario(jogo)
-            # Redesenha a tela final quando o usuário sair do diário
             exibir_tela_final()
 
         elif op == '3':
@@ -512,15 +496,13 @@ def rodar_partida(ClasseJogo):
 
     while jogo_ativo:
         
-        # Procura o lobisomem na lista de jogadores
         lobo = next((j for j in jogo.jogadores if isinstance(j, Lobisomem)), None)
         
-        # Se o lobo existir, estiver morto, e o aviso ainda não foi dado
         if lobo and not lobo.esta_vivo and not aviso_morte_lobo_dado:
-            aviso_morte_lobo_dado = True # Marca que o aviso foi dado
+            aviso_morte_lobo_dado = True
             print("\n" + VERMELHO + "="*80)
             print(VERMELHO + "!!! ALERTA !!!" + RESETAR)
-            print("O corpo do lobisomem foi encontrado morto, quer continuar a investigacao?")
+            print("O corpo do lobisomem foi encontrado. Quer continuar a investigação?")
             print(PRETO + "(você não ganhará ou perderá pontos extras pelo palpite do lobisomem)" + RESETAR)
             print(VERMELHO + "="*80 + RESETAR)
             
@@ -528,8 +510,8 @@ def rodar_partida(ClasseJogo):
             if conf_lobo == 'N':
                 print(ROXO + "\nVocê decide encerrar o caso, já que a ameaça principal foi neutralizada." + RESETAR)
                 time.sleep(2)
-                jogo_ativo = False # Força o fim do jogo
-                continue # Pula para o fim do loop
+                jogo_ativo = False
+                continue 
 
         
         print(AMARELO + f"\n\t\t\t\tDIA {rodada}" + RESETAR)
