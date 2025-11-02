@@ -5,7 +5,7 @@ import textwrap
 
 # Importa de outros arquivos do projeto
 from pistas import gerar_pista, TEXTOS, anotacoes, PAPEIS_PARA_PISTAS
-from classes import * # Usado em mostrar_diario
+from classes import * # Usado em mostrar_diario E rodar_partida
 
 # --- Constantes de UI ---
 
@@ -68,7 +68,7 @@ def formatar_paragrafo(texto, lento=True, recuo_especial=False):
             print(texto_formatado)
 
 
-def lista_suspeitos(default, jogo=None, palpites=None, final=False):
+def lista_suspeitos(default, jogo=None, palpites=None, final=False, lobo_morreu=False):
     print(CIANO+"Lista de suspeitos"+RESETAR)
     print(PRETO + "--------------------------------------" + RESETAR)
     
@@ -100,7 +100,8 @@ def lista_suspeitos(default, jogo=None, palpites=None, final=False):
                 if palpite_atual == papel_real:
                     pontos_str = "(+10)"
                     if papel_real == "Lobisomem":
-                        pontos_str = "(+30)"
+                        # SÓ GANHA PONTO DO LOBO SE ELE NÃO MORREU
+                        pontos_str = "(+30)" if not lobo_morreu else "(+0)" 
                     print(VERDE + f"{nome_formatado} ||  {palpite_formatado} {pontos_str}" + RESETAR)
                 
                 elif palpite_atual == "...":
@@ -109,7 +110,8 @@ def lista_suspeitos(default, jogo=None, palpites=None, final=False):
                 else:
                     pontos_str = "(-5)"
                     if palpite_atual == "Lobisomem": 
-                        pontos_str = "(-30)"
+                        # SÓ PERDE PONTO DO LOBO SE ELE NÃO MORREU
+                        pontos_str = "(-30)" if not lobo_morreu else "(-5)" 
                     print(VERMELHO + f"{nome_formatado} ||  {palpite_formatado} {pontos_str}" + RESETAR)
             else:
                 print(PRETO + f"{nome_formatado} ||  {palpite_atual}" + RESETAR)
@@ -174,15 +176,14 @@ def atualizar_lista_suspeitos(jogo_obj, palpites_jogador):
             print(VERMELHO + "Entrada inválida. Digite um número." + RESETAR)
             time.sleep(1)
 
-    limpar_tela()
-
-def mostrar_diario():
+def mostrar_diario(jogo_obj):
     if not anotacoes:
         print(VERMELHO + "\nO diário ainda está vazio. Nenhuma noite foi registrada." + RESETAR)
         time.sleep(2)
         return
 
-    nomes = ["Maria", "Isabella", "Angelina", "Diego", "Carlos", "Victor", "Guilherme"]
+    # MUDANÇA: Agora usa o jogo_obj para pegar os nomes
+    nomes = [j.nome for j in jogo_obj.jogadores]
     papeis = [
         {"papel": "Cidadao Comum","descricao": "Não possui habilidades especiais." },
         {"papel": "Medico","descricao": "Pode salvar uma pessoa por noite." },
@@ -201,16 +202,34 @@ def mostrar_diario():
         print(AZUL + f"\n\t\t\tDIÁRIO DE INVESTIGAÇÃO" + RESETAR)
 
         if pagina_atual == 1:
-            print("\nPrincipais suspeitos:")
+            # --- SEÇÃO DE SUSPEITOS ---
+            print("\n" + CIANO + "--- PRINCIPAIS SUSPEITOS ---" + RESETAR)
             for n in nomes:
                 print(f"- {n}")
-            print("\nPossíveis perfis:")
+            
+            # --- (NOVO) SEÇÃO DE MORTOS ---
+            print("\n" + CIANO + "--- LISTA DE MORTOS ---" + RESETAR)
+            mortos = [j.nome for j in jogo_obj.jogadores if not j.esta_vivo]
+            if not mortos:
+                print(PRETO + "Nenhuma morte registrada (ainda)." + RESETAR)
+            else:
+                for m in mortos:
+                    print(VERMELHO + f"- {m}" + RESETAR)
+
+            # --- (NOVO) SEÇÃO DE EQUIPES ---
+            print("\n" + CIANO + "--- EQUIPES CONHECIDAS ---" + RESETAR)
+            print(VERDE + "INOCENTE:" + RESETAR + " Medico, Vidente, Cidadao Comum")
+            print(VERMELHO + "AMEAÇA:" + RESETAR + " Lobisomem")
+            print(AMARELO + "NEUTRO:" + RESETAR + " Bruxa, Pistoleiro")
+            
+            # --- SEÇÃO DE PAPÉIS ---
+            print("\n" + CIANO + "--- POSSÍVEIS PAPÉIS ---" + RESETAR)
             for p in papeis:
                 print(f"{p['papel']}: {p['descricao']}")
             print()
+            
         else:
             print(AZUL + f"--- NOITE {pagina_atual-1} ---" + RESETAR)
-            # --- ALTERADO AQUI ---
             # Ativa a formatação especial de recuo para o diário
             formatar_paragrafo(anotacoes[pagina_atual-1], lento=False, recuo_especial=True) 
             
@@ -251,55 +270,60 @@ def informacoes_noite(jogo, rodada):
 # --- Funções de Fluxo de Jogo (Tutorial e Final) ---
 
 def introducao():
-    print(ROXO+"\n\n\t\t\tBem vindo a Wolvesville!"+RESETAR)
-    print("" + "="*80 + "")
-    op = input(PRETO+"Para pular a explicação, pressione 0\nPara continuar, pressione 'Enter' "+RESETAR)
-    if op == '0':
+    print(ROXO+"\n\n\t\t\tBem vindo a Wolvesville!")
+    print("" + "="*80 +RESETAR)
+    op = input(PRETO+"\nPara pular a contextualização, pressione 0\nPara continuar, pressione 'Enter' "+RESETAR)
+    if op != '0':
+        # Contextualização
+        print()
+        print(PRETO+"="*80+RESETAR)
+        texto = """Você é um detetive renomado, e seu novo caso o leva à misteriosa cidade de Wolvesville, onde eventos estranhos têm tirado o sono dos moradores."""
+        formatar_paragrafo(texto)
+        texto = """Antes mesmo de arrumar as malas, você fez uma pesquisa preliminar. O que descobriu foi alarmante: os "eventos incomuns" eram apenas a ponta do iceberg. O mistério era muito mais profundo e perigoso do que as notícias locais sugeriam. Percebendo a gravidade da situação, você decidiu que este caso exigia sua presença pessoal."""
+        formatar_paragrafo(texto)
+        formatar_paragrafo("Agora, em Wolvesville, sua rotina é clara:")
+        formatar_paragrafo(ROXO+"Durante o dia: "+RESETAR+"Você investiga a cidade, segue pistas e entrevista os vários suspeitos.")
+        texto = ROXO+"""Durante a noite:"""+RESETAR+""" Você se mantém em segurança, revisando e organizando as informações coletadas em seu diário de investigação."""
+        formatar_paragrafo(texto)
+        print(PRETO+"="*80+RESETAR)
+        print()
+    op = input(PRETO+"\nPara pular o tutorial, pressione 0\nPara continuar, pressione 'Enter' "+RESETAR)
+    limpar_tela()
+    if op != '0':
+        print(ROXO+"                           Como o jogo funciona"+RESETAR)
+        print("" + "="*80 + "")
+        texto = """O jogo avança em rodadas (cada noite é uma rodada). A partir da primeira noite, você terá estas opções principais:"""
+        formatar_paragrafo(texto)
+
+        print()
+        texto = ROXO+"""A. Atualizar lista de suspeitos: """+RESETAR+"""Use esta opção para registrar seus palpites sobre os papéis de cada suspeito. Além de ajudar na sua organização, cada palpite correto renderá pontos de bônus ao final do jogo."""
+        formatar_paragrafo(texto)
+        print(PRETO+"Exemplo da lista de suspeitos:"+RESETAR)
+        lista_suspeitos(True) 
+        print(PRETO+"="*80+RESETAR)
+        input(PRETO+"\nClique 'Enter' para continuar\n"+RESETAR)
         limpar_tela()
-        return
 
-    texto = """Você é um detetive renomado, e seu novo caso o leva à misteriosa cidade de Wolvesville, onde eventos estranhos têm tirado o sono dos moradores."""
-    formatar_paragrafo(texto)
-    texto = """Antes mesmo de arrumar as malas, você fez uma pesquisa preliminar. O que descobriu foi alarmante: os "eventos incomuns" eram apenas a ponta do iceberg. O mistério era muito mais profundo e perigoso do que as notícias locais sugeriam. Percebendo a gravidade da situation, você decidiu que este caso exigia sua presença pessoal."""
-    formatar_paragrafo(texto)
-    formatar_paragrafo("Agora, em Wolvesville, sua rotina é clara:")
-    formatar_paragrafo(ROXO+"Durante o dia: "+RESETAR+"Você investiga a cidade, segue pistas e entrevista os vários suspeitos.")
-    texto = ROXO+"""Durante a noite:"""+RESETAR+""" Você se mantém em segurança, revisando e organizando as informações coletadas em seu diário de investigação."""
-    formatar_paragrafo(texto)
-    input(PRETO+"Clique 'Enter' para continuar"+RESETAR)
+        texto = ROXO+"""B. Finalizar investigação: """+RESETAR+"""Esta opção encerra o jogo. Ao selecioná-la e confirmar, sua pontuação total será revelada, mostrando o detalhamento dos seus acertos."""
+        formatar_paragrafo(texto)
+        print()
+        print(ROXO+"Exemplo da finalização da investigação:"+RESETAR)
+        print()
+        finalizar_jogo(True) 
+        print(PRETO+"="*80+RESETAR)
+        input(PRETO+"\nClique 'Enter' para continuar\n"+RESETAR)
 
-    print(ROXO+"\n                           Como o jogo funciona"+RESETAR)
-    print("" + "="*80 + "")
-    texto = """O jogo avança em rodadas (cada noite é uma rodada). A partir da primeira noite, você terá estas opções principais:"""
-    formatar_paragrafo(texto)
+        texto = ROXO+"""C. Passar para a noite (dormir): """+RESETAR+"""Passa para a proxima noite"""
+        formatar_paragrafo(texto)
+        print()
+        texto = ROXO+"""D. Ver diário de investigação: """+RESETAR+"""Mostra lista de pistas de cada noite"""
+        formatar_paragrafo(texto)
+        print()
+        print(PRETO+"="*80+RESETAR)
+        input(PRETO+"Clique 'Enter' para continuar"+RESETAR)
+        limpar_tela()
 
-    texto = ROXO+"""A. Atualizar lista de suspeitos: """+RESETAR+"""Use esta opção para registrar seus palpites sobre os papéis de cada suspeito. Além de ajudar na sua organização, cada palpite correto renderá pontos de bônus ao final do jogo."""
-    formatar_paragrafo(texto)
-    print(PRETO+"Exemplo da lista de suspeitos:"+RESETAR)
-    lista_suspeitos(True) 
-    print(PRETO+"="*80+RESETAR)
-    input(PRETO+"\nClique 'Enter' para continuar\n"+RESETAR)
-
-    texto = ROXO+"""B. Finalizar investigação: """+RESETAR+"""Esta opção encerra o jogo. Ao selecioná-la e confirmar, sua pontuação total será revelada, mostrando o detalhamento dos seus acertos."""
-    formatar_paragrafo(texto)
-    print()
-    print(ROXO+"Exemplo da finalização da investigação:"+RESETAR)
-    print()
-    finalizar_jogo(True) 
-    print(PRETO+"="*80+RESETAR)
-    input(PRETO+"\nClique 'Enter' para continuar\n"+RESETAR)
-
-    texto = ROXO+"""C. Passar para a noite (dormir): """+RESETAR+"""Passa para a proxima noite"""
-    formatar_paragrafo(texto)
-    print()
-    texto = ROXO+"""D. Ver diário de investigação: """+RESETAR+"""Mostra lista de pistas de cada noite"""
-    formatar_paragrafo(texto)
-    print()
-    print(PRETO+"="*80+RESETAR)
-    limpar_tela()
-
-def finalizar_jogo(default, jogo=None, palpites=None, rodada=0):
-    limpar_tela()
+def finalizar_jogo(default, jogo=None, palpites=None, rodada=0, lobo_morreu=False):
     
     if default == True:
         # Modo Tutorial
@@ -323,7 +347,7 @@ def finalizar_jogo(default, jogo=None, palpites=None, rodada=0):
     # ==================================
     # MODO DINÂMICO (DEFAULT=FALSE)
     # ==================================
-
+    limpar_tela()
     if not jogo or palpites is None:
         print(VERMELHO + "ERRO: Não foi possível calcular a pontuação." + RESETAR)
         return "SAIR"
@@ -340,8 +364,12 @@ def finalizar_jogo(default, jogo=None, palpites=None, rodada=0):
 
         if palpite == papel_real:
             if papel_real == "Lobisomem":
-                pontuacao_total += 30 
-                resumo_bonus.append(f"+30 pts: Acertou o Lobisomem ({nome})")
+                # MUDANÇA: Só pontua se o lobo não morreu
+                if not lobo_morreu: 
+                    pontuacao_total += 30 
+                    resumo_bonus.append(f"+30 pts: Acertou o Lobisomem ({nome})")
+                else:
+                    resumo_bonus.append(f"+0 pts: Acertou o Lobisomem (mas ele morreu)")
             else:
                 pontuacao_total += 10 
                 resumo_bonus.append(f"+10 pts: Acertou {nome} ({papel_real})")
@@ -350,8 +378,13 @@ def finalizar_jogo(default, jogo=None, palpites=None, rodada=0):
                 pontuacao_total -= 5 
                 resumo_penalidades.append(f"-5 pts: Errou {nome} (Era {papel_real} e você palpitou {palpite})")
             elif palpite == "Lobisomem":
-                pontuacao_total -= 30 
-                resumo_penalidades.append(f"-30 pts: Acusou {nome} de ser o Lobo (Errado! Era {papel_real})")
+                # MUDANÇA: Só perde 30 se o lobo não morreu
+                if not lobo_morreu:
+                    pontuacao_total -= 30 
+                    resumo_penalidades.append(f"-30 pts: Acusou {nome} de ser o Lobo (Errado! Era {papel_real})")
+                else:
+                    pontuacao_total -= 5 # Penalidade normal se o lobo já morreu
+                    resumo_penalidades.append(f"-5 pts: Acusou {nome} de ser o Lobo (Errado! Era {papel_real})")
             else:
                 pontuacao_total -= 5 
                 resumo_penalidades.append(f"-5 pts: Errou {nome} (Era {papel_real} e você palpitou {palpite})")
@@ -361,15 +394,15 @@ def finalizar_jogo(default, jogo=None, palpites=None, rodada=0):
         pontuacao_total -= penal_rodada
         resumo_penalidades.append(f"-{penal_rodada} pts: {rodada-1} noites extras (x -5)")
 
-    mortes_inocentes = 0
+    mortes_nao_ameaca = 0
     for j in jogo.jogadores:
-        if j.equipe == "Inocente" and not j.esta_vivo:
-            mortes_inocentes += 1
+        if j.equipe != "Ameaca" and not j.esta_vivo:
+            mortes_nao_ameaca += 1
     penal_mortes = 0
-    if mortes_inocentes > 0:
-        penal_mortes = mortes_inocentes * 5 
+    if mortes_nao_ameaca > 0:
+        penal_mortes = mortes_nao_ameaca * 5 
         pontuacao_total -= penal_mortes
-        resumo_penalidades.append(f"-{penal_mortes} pts: {mortes_inocentes} mortes de Inocentes (x -5)")
+        resumo_penalidades.append(f"-{penal_mortes} pts: {mortes_nao_ameaca} mortes (x -5)")
     
     # --- 2. Exibição da Tela Final ---
     
@@ -386,11 +419,11 @@ def finalizar_jogo(default, jogo=None, palpites=None, rodada=0):
         print(VERMELHO+"-5 pontos:"+RESETAR+" Por cada morte de inocentes.\n")
 
         print(CIANO + "--- SEUS PALPITES FINAIS ---" + RESETAR)
-        lista_suspeitos(default=False, jogo=jogo, palpites=palpites, final=True)
+        lista_suspeitos(default=False, jogo=jogo, palpites=palpites, final=True, lobo_morreu=lobo_morreu)
         
         print("\n" + CIANO + "--- PENALIDADES GERAIS ---" + RESETAR)
         print(VERMELHO + f"Rodadas: {rodada} (-{penal_rodada} pts)" + RESETAR)
-        print(VERMELHO + f"Mortes de Inocentes: {mortes_inocentes} (-{penal_mortes} pts)" + RESETAR)
+        print(VERMELHO + f"Mortes de Inocentes: {mortes_nao_ameaca} (-{penal_mortes} pts)" + RESETAR)
 
         print("\n" + ROXO + "="*30)
         print(f"PONTUAÇÃO TOTAL: {pontuacao_total} PONTOS")
@@ -409,7 +442,13 @@ def finalizar_jogo(default, jogo=None, palpites=None, rodada=0):
 
         if op == '1':
             limpar_tela()
-            print(CIANO + "--- DETALHES DA PONTUAÇÃO ---" + RESETAR)
+            print(CIANO + "--- PAPÉIS REAIS ---" + RESETAR)
+            # (NOVO) MOSTRA OS PAPÉIS REAIS
+            for j in jogo.jogadores:
+                status = PRETO + "(Morto)" if not j.esta_vivo else ""
+                print(f"  {j.nome:<12} || {j.papel} {status}" + RESETAR)
+            
+            print("\n" + CIANO + "--- DETALHES DA PONTUAÇÃO ---" + RESETAR)
             print("\n" + VERDE + "Bônus:" + RESETAR)
             if not resumo_bonus:
                 print("  Nenhum bônus...")
@@ -448,6 +487,7 @@ def rodar_partida(ClasseJogo):
     jogo_ativo = True
     rodada = 1
     palpites_jogador = {} 
+    aviso_morte_lobo_dado = False # (NOVO) Variável de controle
     
     anotacoes.clear()
 
@@ -457,6 +497,28 @@ def rodar_partida(ClasseJogo):
     jogo.simular_noite(rodada)
 
     while jogo_ativo:
+        
+        # (NOVO) VERIFICAÇÃO DA MORTE DO LOBO
+        # Procura o lobisomem na lista de jogadores
+        lobo = next((j for j in jogo.jogadores if isinstance(j, Lobisomem)), None)
+        
+        # Se o lobo existir, estiver morto, e o aviso ainda não foi dado
+        if lobo and not lobo.esta_vivo and not aviso_morte_lobo_dado:
+            aviso_morte_lobo_dado = True # Marca que o aviso foi dado
+            print("\n" + VERMELHO + "="*80)
+            print(VERMELHO + "!!! ALERTA !!!" + RESETAR)
+            print(AMARELO + "O corpo do lobisomem foi encontrado morto, quer continuar a investigacao?")
+            print(PRETO + "(você não ganhará ou perderá pontos extras pelo palpite do lobisomem)" + RESETAR)
+            print(VERMELHO + "="*80 + RESETAR)
+            
+            conf_lobo = input("(S/N) -> ").strip().upper()
+            if conf_lobo == 'N':
+                print(ROXO + "\nVocê decide encerrar o caso, já que a ameaça principal foi neutralizada." + RESETAR)
+                time.sleep(2)
+                jogo_ativo = False # Força o fim do jogo
+                continue # Pula para o fim do loop
+
+        
         print(AMARELO + f"\n\t\t\t\tDIA {rodada}" + RESETAR)
         print(AMARELO + "="*80 + RESETAR)
         informacoes_noite(jogo, rodada)
@@ -488,7 +550,7 @@ def rodar_partida(ClasseJogo):
                 break 
 
             elif op == 'D':
-                mostrar_diario()
+                mostrar_diario(jogo) # MUDANÇA: Passa o objeto 'jogo'
 
             else:
                 print()
@@ -501,7 +563,7 @@ def rodar_partida(ClasseJogo):
         print(AZUL + f"\n\n\t\t\t\tNOITE {rodada}" + RESETAR)
         print(AZUL + "="*80 + RESETAR)
         time.sleep(2)
-        formatar_paragrafo("Auuuuuuuuuuuuuuuuuuuuuuuuu")
+        print("Auuuuuuuuuuuuuuuuuuuuuuuuu")
         
         jogo.simular_noite(rodada)
 
@@ -509,4 +571,11 @@ def rodar_partida(ClasseJogo):
     print(ROXO + "A investigacao foi encerrada." + RESETAR)
     print(ROXO + "" + "="*80 + RESETAR)
     
-    return finalizar_jogo(default=False, jogo=jogo, palpites=palpites_jogador, rodada=rodada)
+    # MUDANÇA: Passa a variável de controle da morte do lobo
+    return finalizar_jogo(
+        default=False, 
+        jogo=jogo, 
+        palpites=palpites_jogador, 
+        rodada=rodada, 
+        lobo_morreu=aviso_morte_lobo_dado
+    )
