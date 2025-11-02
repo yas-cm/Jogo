@@ -2,7 +2,7 @@
 import random
 from classes import *
 import time # Usado apenas no __main__
-from pistas import TEXTOS # Apenas a classe Jogo usa isso
+from pistas import TEXTOS 
 
 # Importa a interface que acabamos de criar
 import interface as ui
@@ -12,21 +12,20 @@ class Jogo:
         
         self.nomes = ["Maria", "Isabella", "Angelina", "Diego", "Carlos", "Victor", "Guilherme"]
         
-        self.papeis_da_partida = [] # Quais 7 papeis estao neste jogo
-        self.jogadores = []         # A lista final de objetos (ex: Medico("Maria"))
+        self.papeis_da_partida = [] 
+        self.jogadores = []         
 
         self._definir_papeis_partida()
         self.distribui_papeis()
         self.eventos_noite = {}
 
-    def _definir_papeis_partida(self): # Metodo privado
+    def _definir_papeis_partida(self): 
         base_garantida = [Lobisomem, Medico, Cidadao, Cidadao] 
         pool_extra = [Medico, Cidadao, Vidente, Bruxa, Pistoleiro]
         random.shuffle(pool_extra)
         papeis_sorteados_extra = pool_extra[:3]
         self.papeis_da_partida = base_garantida + papeis_sorteados_extra
         nomes_papeis = [p.__name__ for p in self.papeis_da_partida]
-        print(f"Debug       ---- Papeis na partida (antes de embaralhar):\n{nomes_papeis}")
 
     def distribui_papeis(self):
         papeis_embaralhados = self.papeis_da_partida[:] 
@@ -36,7 +35,6 @@ class Jogo:
             self.jogadores.append(jogador_objeto)
 
     def simular_noite(self, rodada):
-        print(f"\nDebug       ---- Iniciando simulacao da noite {rodada}...")
         
         self.eventos_noite = {
             "mortos": [], "sobreviventes": [], "pistas_vidente": [],
@@ -89,7 +87,7 @@ class Jogo:
                 alvo_vidente_obj = random.choice(alvos_possiveis)
                 info_vidente = vidente.investigar(alvo_vidente_obj) 
                 
-                if random.random() < 0.75: # 75% de chance de ser a equipe
+                if random.random() < 0.75: 
                     if info_vidente == "Lobisomem":
                         pista = TEXTOS["pistas_eventos"]["vidente_equipe"].format(pessoa=alvo_vidente_obj.nome, equipe="Ameaça")
                     elif info_vidente == "Pistoleiro" or info_vidente == "Bruxa":
@@ -100,8 +98,6 @@ class Jogo:
                     pista = TEXTOS["pistas_eventos"]["vidente_papel"].format(pessoa=alvo_vidente_obj.nome, papel=info_vidente)
 
                 self.eventos_noite["pistas_vidente"].append(pista)
-                print(f"\nDebug       ----  Vidente investigou {alvo_vidente_obj.nome} e descobriu: {info_vidente}")
-                print(f"Debug       ----  Pista gerada para o detetive: {pista}\n")
 
         # --- Ação da Bruxa ---            
         if bruxa:
@@ -110,7 +106,6 @@ class Jogo:
                 cura_bruxa = bruxa.usar_cura()
                 if cura_bruxa:
                     self.eventos_noite["eventos_bruxa"].append("cura")
-                    print(f"\nDebug       ----  Bruxa ({bruxa.nome}) usou a POCAo DE CURA.\n")
             elif chance > 0.25 and chance < 0.50 and bruxa.pocao_veneno:
                 alvos_possiveis = [j for j in vivos if j != bruxa]
                 if rodada == 1:
@@ -121,7 +116,7 @@ class Jogo:
                     if alvo_bruxa_veneno:
                         ataques_da_noite[alvo_bruxa_veneno] = "Envenenamento"
                         self.eventos_noite["eventos_bruxa"].append("veneno")
-                        print(f"\nDebug       ----  Bruxa ({bruxa.nome}) usou VENENO em {alvo_bruxa_veneno.nome}.\n")
+                        
                         
         # --- Ação do Pistoleiro ---
         if pistoleiro and pistoleiro.balas > 0:
@@ -134,7 +129,7 @@ class Jogo:
                         ataques_da_noite[alvo_pistoleiro] = "Tiro (Pistoleiro)"
                         pista_pistoleiro = TEXTOS["fatos"]["pistoleiro_revelado"].format(pessoa=pistoleiro.nome)
                         self.eventos_noite["eventos_pistoleiro"].append(pista_pistoleiro)
-                        print(f"Debug       ----  Pistoleiro ({pistoleiro.nome}) ATIROU em {alvo_pistoleiro.nome}.")
+
 
         # --- Resolução de Conflitos ---
         salvos_pelo_medico = set()
@@ -146,7 +141,6 @@ class Jogo:
             if alvo_obj in salvos_pelo_medico:
                 self.eventos_noite["sobreviventes"].append(alvo_obj.nome)
                 personagem_salvo = True
-                print(f"Debug       ----  {alvo_obj.nome} foi salvo pelo Medico.")
             if cura_bruxa:
                 if not personagem_salvo: 
                     self.eventos_noite["sobreviventes"].append(alvo_obj.nome)
@@ -157,8 +151,6 @@ class Jogo:
                 info_morte = {"pessoa": alvo_obj.nome, "causa": causa_da_morte}
                 self.eventos_noite["mortos"].append(info_morte)
 
-        print(f"Debug       ----  Simulacao finalizada. Mortos (info): {self.eventos_noite['mortos']}, Sobreviventes: {self.eventos_noite['sobreviventes']}")
-
 
 # =============================================================
 # PONTO DE ENTRADA DO JOGO
@@ -166,20 +158,14 @@ class Jogo:
 
 if __name__ == "__main__":
     
-    # Chama a introdução/tutorial (que está em interface.py)
     ui.introducao() 
     
-    # Loop principal do jogo
     while True:
-        # 'rodar_partida' agora contém o 'while jogo_ativo' 
-        # e retorna "REINICIAR" ou "SAIR"
-        # Passamos a *Classe* Jogo para a interface poder criá-la
         resultado = ui.rodar_partida(Jogo) 
         
         if resultado == "SAIR":
             break
         
-        # Se for "REINICIAR", o loop continua e chama rodar_partida() de novo
         ui.limpar_tela()
         print(ui.ROXO + "Reiniciando uma nova investigação..." + ui.RESETAR)
         time.sleep(2)

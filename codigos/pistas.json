@@ -57,12 +57,5 @@
             "um pedaço de tecido rasgado"
         ],
         "template_objeto": "Um objeto estranho foi encontrado na cena: {objeto}."
-    },
-
-    "lembretes": [
-        "Lembrete: Se o Pistoleiro atirar, sua identidade será revelada.",
-        "Lembrete: A Bruxa só pode usar cada poção (Cura e Veneno) uma vez.",
-        "Lembrete: Se a bruxa usar o veneno e o médico não salvar a pessoa escolhida, então a pessoa escolhida irá morrer",
-        "Lembrete: Se a bruxa usar a sua cura, não haverá mortes."
-    ]
+    }
 }

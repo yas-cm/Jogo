@@ -17,11 +17,6 @@ class Personagem:
     def morrer(self):
         """Muda o estado do jogador para morto."""
         self.esta_vivo = False
-        print(f"--- NOTICIA: {self.nome} foi eliminado(a). ---")
-        if self.papel == "Lobisomem":
-            print("\n----------------------------")
-            print("O lobisomem foi eliminado!!!")
-            print("----------------------------")
 
     def __str__(self):
         # Debug
@@ -52,7 +47,6 @@ class Medico(Personagem):
         A lógica de quem vive ou morre sera tratada pelo 'motor' do jogo.
         """
         if self.esta_vivo:
-            print(f"Debug ----        O Medico ({self.nome}) esta tentando salvar {alvo.nome}...")
             return alvo
         return None
 
@@ -68,7 +62,6 @@ class Vidente(Personagem):
         Revela o papel de um jogador (objeto Personagem).
         """
         if self.esta_vivo:
-            print(f"Debug ----        A Vidente ({self.nome}) esta investigando {alvo.nome}...")
             # Retorna o papel do alvo para o motor do jogo
             return alvo.papel
         return None
@@ -94,12 +87,8 @@ class Pistoleiro(Personagem):
         if self.balas > 0:
             self.balas -= 1
             if not self.identidade_revelada:
-                print(f"O Pistoleiro foi revelado! ({self.nome}) atirou em {alvo.nome}!")
                 self.identidade_revelada = True 
-            else:
-                print(f"O Pistoleiro ({self.nome}) atirou novamente, mirando em {alvo.nome}!")
             
-            print(f"Debug ----        Balas: {self.balas}")
             return alvo
         else:
             return None
@@ -121,8 +110,7 @@ class Bruxa(Personagem):
 
         if self.pocao_veneno:
             self.pocao_veneno = False 
-            print(f"Debug ----        A Bruxa ({self.nome}) usou o veneno em {alvo.nome}.")
-            return alvo # Retorna o alvo para o motor do jogo
+            return alvo
         else:
             return None
 
@@ -134,7 +122,6 @@ class Bruxa(Personagem):
         if self.pocao_cura:
             self.pocao_cura = False
             self.usou_cura = True
-            print(f"A Bruxa ({self.nome}) usou a pocao de cura! Todos os atacados esta noite estao salvos.")
             return True
         else:
             return False
@@ -151,6 +138,5 @@ class Lobisomem(Personagem):
     def matar(self, alvo):
         """Define o alvo do ataque do Lobisomem."""
         if self.esta_vivo:
-            print(f"Debug ----        O Lobisomem ({self.nome}) esta atacando {alvo.nome}...")
             return alvo
         return None

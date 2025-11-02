@@ -6,12 +6,13 @@ import time
 from classes import *
 
 try:
+    # --- Mantido (presume que 'codigos/pistas.json' é o caminho certo) ---
     with open('codigos/pistas.json', 'r', encoding='utf-8') as f:
         TEXTOS = json.load(f)
-    print(f"Arquivo 'pistas.json' carregado com sucesso.")
+    # Mensagem de debug removida
 except FileNotFoundError:
     print(f"ERRO CRITICO [pistas.py]: Arquivo 'pistas.json' nao encontrado no caminho!")
-    TEXTOS = {} # Define um dicionario vazio para evitar que o resto quebre
+    TEXTOS = {} 
 except json.JSONDecodeError:
     print(f"ERRO CRITICO [pistas.py]: 'pistas.json' contem um erro de sintaxe (JSON invalido)!")
     TEXTOS = {}
@@ -30,6 +31,10 @@ EQUIPES_PARA_PISTAS = ["Inocente", "Ameaca", "Neutro"]
 anotacoes = {}
 
 def formatar_paragrafo(texto):
+    """
+    Imprime o texto formatado (largura 80) letra por letra.
+    Isso é o que exibe as "Informações coletadas" na tela.
+    """
     texto_formatado = textwrap.fill(texto, width=80, replace_whitespace=False)
     for letra in texto_formatado:
         print(letra, end='', flush=True) 
@@ -69,12 +74,10 @@ def _obter_pistas_fatos(eventos):
             pessoa_morta = info_morte["pessoa"]
             causa_morte = info_morte["causa"]
             
-            # Morte
             pista_m = TEXTOS["fatos"]["morte"].format(pessoa=pessoa_morta)
             pistas_fatos.append(pista_m)
             formatar_paragrafo(pista_m)
             
-            # Causa 
             pista_c = TEXTOS["fatos"]["causa_morte"].format(pessoa=pessoa_morta, causa=causa_morte)
             pistas_fatos.append(pista_c)
             formatar_paragrafo(pista_c)
@@ -116,45 +119,39 @@ def _obter_pistas_eventos(eventos):
         
     return pistas_eventos
 
-def _gerar_pistas_logicas(personagens_vivos_obj, qtd=3):
+def _gerar_pistas_logicas(personagens_vivos_obj, rodada, qtd=4):
     pistas_logicas = []
     
     tipos_disponiveis = list(TEXTOS["pistas_logicas"].keys())
     
-    # Tenta gerar 'qtd' pistas
     tentativas = 0
-    while len(pistas_logicas) < qtd and tentativas < 10: # Limite de seguranca
+    while len(pistas_logicas) < qtd and tentativas < 10: 
         tentativas += 1
         pista_gerada = None
         tipo_sorteado = random.choice(tipos_disponiveis)
         
         try:
             # --- TIPO 1: (P1 ou P2 é Papel) ---
-            # Sorteamos P1, pegamos seu papel real, e sorteamos um P2 aleatorio.
             if tipo_sorteado == "tipo1_disj_simples" and len(personagens_vivos_obj) >= 2:
                 jogadores = _obter_objs_aleatorios(personagens_vivos_obj, 2)
                 if jogadores:
-                    # Pega o papel real do primeiro sorteado
                     papel_real = jogadores[0].papel
-                    # Embaralha os nomes para a pista
                     nomes = [jogadores[0].nome, jogadores[1].nome]
                     random.shuffle(nomes)
                     
                     pista_gerada = TEXTOS["pistas_logicas"]["tipo1_disj_simples"].format(p1=nomes[0], p2=nomes[1], papel=papel_real)
             
             # --- TIPO 2: (P1 ou P2 ou P3 é Papel) ---
-            # Sorteamos P1 (que tem o Papel) e P2, P3 aleatorios.
             elif tipo_sorteado == "tipo2_disj_tripla" and len(personagens_vivos_obj) >= 3:
                 jogadores = _obter_objs_aleatorios(personagens_vivos_obj, 3)
                 if jogadores:
-                    papel_real = jogadores[0].papel # Papel real do primeiro
+                    papel_real = jogadores[0].papel 
                     nomes = [jogadores[0].nome, jogadores[1].nome, jogadores[2].nome]
-                    random.shuffle(nomes) # Embaralha os nomes
+                    random.shuffle(nomes) 
                     
                     pista_gerada = TEXTOS["pistas_logicas"]["tipo2_disj_tripla"].format(p1=nomes[0], p2=nomes[1], p3=nomes[2], papel=papel_real)
             
             # --- TIPO 3: (P1 NÃO é Papel) ---
-            # Sorteamos P1, pegamos seu papel real, e sorteamos um papel FALSO (que nao seja o dele).
             elif tipo_sorteado == "tipo3_negacao" and len(personagens_vivos_obj) >= 1:
                 jogador = _obter_objs_aleatorios(personagens_vivos_obj, 1)
                 if jogador:
@@ -166,52 +163,51 @@ def _gerar_pistas_logicas(personagens_vivos_obj, qtd=3):
                     pista_gerada = TEXTOS["pistas_logicas"]["tipo3_negacao"].format(p1=jogador.nome, papel=papel_falso)
 
             # --- TIPO 4: (P1 é da Equipe X) ---
-            # Sorteamos P1 e pegamos sua equipe real.
             elif tipo_sorteado == "tipo4_afirm_equipe" and len(personagens_vivos_obj) >= 1:
                 jogador = _obter_objs_aleatorios(personagens_vivos_obj, 1)
                 if jogador:
                     jogador = jogador[0]
-                    equipe_real = jogador.equipe
-                    pista_gerada = TEXTOS["pistas_logicas"]["tipo4_afirm_equipe"].format(p1=jogador.nome, equipe=equipe_real)
+                    
+                    if rodada == 1 and isinstance(jogador, Lobisomem):
+                        pass # Impede que a pista revele o Lobo na Rodada 1
+                    else:
+                        equipe_real = jogador.equipe
+                        pista_gerada = TEXTOS["pistas_logicas"]["tipo4_afirm_equipe"].format(p1=jogador.nome, equipe=equipe_real)
             
             # --- TIPO 5: (Se P1 é Papel1, então P2 é Papel2) ---
-            # Fazemos a condicao (P1 é Papel1) ser FALSA.
             elif tipo_sorteado == "tipo5_cond_simples" and len(personagens_vivos_obj) >= 2:
                 jogadores = _obter_objs_aleatorios(personagens_vivos_obj, 2)
                 if jogadores:
                     p1 = jogadores[0]
                     p2 = jogadores[1]
                     
-                    # Pega um Papel1 FALSO para P1
-                    papel1_falso = obter_papel_aleatorio(excluir=[p1.papel])
-                    # Pega um Papel2 aleatorio para P2 (tanto faz se e V ou F)
-                    papel2_aleatorio = obter_papel_aleatorio()
+                    # Usa os papéis reais de P1 e P2 para criar uma pista (True -> True)
+                    papel1_real = p1.papel
+                    papel2_real = p2.papel
                     
                     pista_gerada = TEXTOS["pistas_logicas"]["tipo5_cond_simples"].format(
-                        p1=p1.nome, papel1=papel1_falso, 
-                        p2=p2.nome, papel2=papel2_aleatorio
+                        p1=p1.nome, papel1=papel1_real, 
+                        p2=p2.nome, papel2=papel2_real
                     )
 
             # --- TIPO 6: (Se P1 é Papel1, então P2 NÃO é Papel_falso) ---
-            # Fazemos a condicao (P1 é Papel1) ser FALSA.
             elif tipo_sorteado == "tipo6_cond_negacao" and len(personagens_vivos_obj) >= 2:
                 jogadores = _obter_objs_aleatorios(personagens_vivos_obj, 2)
                 if jogadores:
                     p1 = jogadores[0]
                     p2 = jogadores[1]
                     
-                    # Pega um Papel1 FALSO para P1
-                    papel1_falso = obter_papel_aleatorio(excluir=[p1.papel])
-                    # Pega um Papel_falso aleatorio (tanto faz se e V ou F)
-                    papel_falso_aleatorio = obter_papel_aleatorio(excluir=["Lobisomem"])
+                    # Usa o papel real de P1
+                    papel1_real = p1.papel
+                    # Pega um papel que P2 realmente NÃO é
+                    papel_falso_para_p2 = obter_papel_aleatorio(excluir=[p2.papel, "Lobisomem"])
                     
                     pista_gerada = TEXTOS["pistas_logicas"]["tipo6_cond_negacao"].format(
-                        p1=p1.nome, papel1=papel1_falso, 
-                        p2=p2.nome, papel_falso=papel_falso_aleatorio
+                        p1=p1.nome, papel1=papel1_real, 
+                        p2=p2.nome, papel_falso=papel_falso_para_p2
                     )
 
             # --- TIPO 7: (Se P1 é Equipe1 E P2 é Equipe2, então P3 é Papel) ---
-            # Fazemos a condicao (P1 é Equipe1) ser FALSA.
             elif tipo_sorteado == "tipo7_cond_composta" and len(personagens_vivos_obj) >= 3:
                 jogadores = _obter_objs_aleatorios(personagens_vivos_obj, 3)
                 if jogadores:
@@ -219,16 +215,15 @@ def _gerar_pistas_logicas(personagens_vivos_obj, qtd=3):
                     p2 = jogadores[1]
                     p3 = jogadores[2]
                     
-                    # Pega uma Equipe1 FALSA para P1
-                    equipe1_falsa = obter_equipe_aleatoria(excluir=[p1.equipe])
-                    # Pega Equipe2 e Papel aleatorios (tanto faz)
-                    equipe2_aleatoria = obter_equipe_aleatoria()
-                    papel_aleatorio = obter_papel_aleatorio()
+                    # Usa as equipes e papéis reais dos jogadores
+                    equipe1_real = p1.equipe
+                    equipe2_real = p2.equipe
+                    papel_real_p3 = p3.papel
                     
                     pista_gerada = TEXTOS["pistas_logicas"]["tipo7_cond_composta"].format(
-                        p1=p1.nome, equipe1=equipe1_falsa,
-                        p2=p2.nome, equipe2=equipe2_aleatoria,
-                        p3=p3.nome, papel=papel_aleatorio
+                        p1=p1.nome, equipe1=equipe1_real,
+                        p2=p2.nome, equipe2=equipe2_real,
+                        p3=p3.nome, papel=papel_real_p3
                     )
 
             if pista_gerada and pista_gerada not in pistas_logicas:
@@ -242,7 +237,6 @@ def _gerar_pistas_logicas(personagens_vivos_obj, qtd=3):
 
 def _gerar_pistas_ruido(personagens_vivos_obj):
     qtd = random.randint(0,2)
-    print(f"Debug [pistas.py]: Gerando {qtd} pistas de Ruído...")
     pistas_ruido = []
     
     tipos_disponiveis = list(TEXTOS["ruido"].keys())
@@ -252,11 +246,9 @@ def _gerar_pistas_ruido(personagens_vivos_obj):
         tipo_sorteado = random.choice(tipos_disponiveis)
         
         try:
-            # Pistas de ruído que NÃO precisam de nomes
             if tipo_sorteado in ["clima", "testemunha_vulto", "locais_corpo"]:
                 pista_gerada = random.choice(TEXTOS["ruido"][tipo_sorteado])
             
-            # Pista de ruído que pode precisar de 1 ou 2 nomes
             elif tipo_sorteado == "pessoa_abalada" and len(personagens_vivos_obj) >= 1:
                 template_ruido = random.choice(TEXTOS["ruido"]["pessoa_abalada"])
                 
@@ -269,7 +261,6 @@ def _gerar_pistas_ruido(personagens_vivos_obj):
                      if nomes:
                         pista_gerada = template_ruido.format(pessoa_viva=nomes[0])
             
-            # Pista de ruído de objeto
             elif tipo_sorteado == "template_objeto":
                 objeto_sorteado = random.choice(TEXTOS["ruido"]["objetos_ruido"])
                 pista_gerada = TEXTOS["ruido"]["template_objeto"].format(objeto=objeto_sorteado)
@@ -285,22 +276,22 @@ def _gerar_pistas_ruido(personagens_vivos_obj):
 
 def gerar_pista(jogo_obj, rodada):
     
-    eventos = jogo_obj.eventos_noite # Pega os eventos da noite simulada
-    vivos_obj = [j for j in jogo_obj.jogadores if j.esta_vivo] # Pega a lista de objetos de jogadores vivos
+    eventos = jogo_obj.eventos_noite 
+    vivos_obj = [j for j in jogo_obj.jogadores if j.esta_vivo] 
     
     qtd_logicas = 3
     
+    # A função formatar_paragrafo() é chamada DENTRO de cada uma dessas funções
     pistas_fatos = _obter_pistas_fatos(eventos) 
     pistas_eventos = _obter_pistas_eventos(eventos)
-    pistas_logicas = _gerar_pistas_logicas(vivos_obj, qtd_logicas)
+    pistas_logicas = _gerar_pistas_logicas(vivos_obj, rodada, qtd_logicas)
     pistas_ruido = _gerar_pistas_ruido(vivos_obj)
     
-    # Juntar tudo
     todas_pistas = pistas_fatos + pistas_eventos + pistas_logicas + pistas_ruido
     
     if not todas_pistas:
-        return "A noite foi surpreendentemente calma. Nenhuma pista foi encontrada."
+        # Fallback caso nada aconteça
+        formatar_paragrafo("A noite foi surpreendentemente calma. Nenhuma pista foi encontrada.")
         
-    # Retorna uma string unica, com cada pista formatada
+    # Salva tudo no diário
     anotacoes[rodada] = "\n".join(f"• {p}" for p in todas_pistas)
-    # print(f"Debug ----                       \n{anotacoes}")
