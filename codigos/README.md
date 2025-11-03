@@ -2,7 +2,7 @@
 
 Este projeto é um jogo de lógica e dedução em modo texto.
 
-## 🚀 Como Rodar o Jogo
+## Como Rodar o Jogo
 
 Para executar o projeto, siga os passos abaixo:
 

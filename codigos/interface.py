@@ -323,6 +323,61 @@ def finalizar_jogo(default, jogo=None, palpites=None, rodada=0, lobo_morreu=Fals
         formatar_paragrafo("Total: "+VERDE+"0 pontos"+RESETAR)
         return "SAIR" 
 
+    # --- VERIFICAÇÃO DE GAME OVER (LOBO VENCEU) ---
+    if palpites and palpites.get("GAME_OVER") == "LOBO_VENCEU":
+        
+        def exibir_tela_game_over():
+            limpar_tela()
+            print(VERMELHO + "\n" + "="*80)
+            print("\t\t\tFIM DE JOGO")
+            print("="*80 + RESETAR)
+            print(AMARELO + "\n\t\tO LOBISOMEM VENCEU. VOCÊ PERDEU.\n" + RESETAR)
+
+            print(CIANO + "--- SITUAÇÃO FINAL ---" + RESETAR)
+            print(PRETO + "--------------------------------------" + RESETAR)
+            for j in jogo.jogadores:
+                nome_formatado = f"{j.nome:<12}"
+                papel_real = j.papel
+                
+                if isinstance(j, Lobisomem):
+                    print(AMARELO + f"{nome_formatado} || {papel_real:<15} (VENCEDOR)" + RESETAR)
+                elif not j.esta_vivo:
+                     print(PRETO + f"{nome_formatado} || {papel_real:<15} (Morto)" + RESETAR)
+                else: 
+                     print(PRETO + f"{nome_formatado} || {papel_real:<15} (Vivo)" + RESETAR)
+
+            print(PRETO + "--------------------------------------" + RESETAR)
+            
+            print("\n" + CIANO + "--- SEUS PALPITES FINAIS ---" + RESETAR)
+            print(PRETO + "--------------------------------------" + RESETAR)
+            for j in jogo.jogadores:
+                nome_formatado = f"[*] {j.nome:<10}"
+                print(PRETO + f"{nome_formatado} ||  XXX" + RESETAR)
+            print(PRETO + "--------------------------------------" + RESETAR)
+
+            print("\n" + ROXO + "="*30)
+            print(f"PONTUAÇÃO TOTAL: XXX PONTOS")
+            print("="*30 + RESETAR)
+
+        exibir_tela_game_over()
+
+        while True:
+            print("\nO que deseja fazer?")
+            print(PRETO + "[1]" + RESETAR + " Reiniciar Jogo")
+            print(PRETO + "[2]" + RESETAR + " Sair")
+            op = input(PRETO + "Sua escolha: " + RESETAR + "-> ").strip()
+
+            if op == '1':
+                return "REINICIAR"
+            elif op == '2':
+                return "SAIR"
+            else:
+                print(VERMELHO + "Opção inválida." + RESETAR)
+                time.sleep(1)
+                exibir_tela_game_over()
+    # --- FIM DA VERIFICAÇÃO DE GAME OVER ---
+
+
     # ==================================
     # MODO DINÂMICO (DEFAULT=FALSE)
     # ==================================
@@ -496,6 +551,30 @@ def rodar_partida(ClasseJogo):
 
     while jogo_ativo:
         
+        # --- VITÓRIA DO LOBO ---
+        vivos_agora = [j for j in jogo.jogadores if j.esta_vivo]
+        if len(vivos_agora) == 1 and isinstance(vivos_agora[0], Lobisomem):
+            limpar_tela()
+            print()
+            formatar_paragrafo(VERMELHO+f"Apenas o Lobisomem, {vivos_agora[0].nome}, continua vivo."+RESETAR)
+            print()
+            formatar_paragrafo(PRETO+"Você acorda assustado no meio da noite, traumatizado com os acontecimentos dos últimos dias.")
+            formatar_paragrafo("Você decide que esse caso saiu do seu controle, e resolve pegar suas coisas e fugir enquanto ainda há tempo.")
+            formatar_paragrafo("Em meio ao desespero, você olha para a janela, e percebe que ela está aberta. Será que esqueceu de fechar? Ou será que é tarde demais?")
+            print()
+            formatar_paragrafo("Antes de processar a informação, você escuta um barulho atrás de você, e percebe que seu tempo acabou.")
+            formatar_paragrafo("Você falhou."+RESETAR)
+            
+            print(VERMELHO + "\n" + "="*80)
+            print("\t\t\t\tFIM DE JOGO")
+            print("="*80 + RESETAR)
+            
+            palpites_jogador = {"GAME_OVER": "LOBO_VENCEU"} 
+            jogo_ativo = False
+            input(PRETO+"Pressione 'Enter' para continuar"+RESETAR)
+            continue # Pula direto para o 'finalizar_jogo'
+        # --- FIM DA VERIFICAÇÃO ---
+            
         lobo = next((j for j in jogo.jogadores if isinstance(j, Lobisomem)), None)
         
         if lobo and not lobo.esta_vivo and not aviso_morte_lobo_dado:
@@ -519,7 +598,7 @@ def rodar_partida(ClasseJogo):
         informacoes_noite(jogo, rodada)
         
         while True: 
-            print("\nO que voce, detetive, deseja fazer?")
+            print("\nO que você, detetive, deseja fazer?")
             print(AMARELO + "[A]" + RESETAR + " Atualizar lista de suspeitos")
             print(AMARELO + "[B]" + RESETAR + " Finalizar investigação" + PRETO + " (essa opção finalizará o jogo)" + RESETAR)
             print(AMARELO + "[C]" + RESETAR + " Passar para a noite (Dormir)")

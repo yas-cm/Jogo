@@ -39,7 +39,8 @@
         ],
         "pessoa_abalada": [
             "'{pessoa_viva}' parece muito nervoso(a) esta manhã, mais que o normal.",
-            "'{pessoa_viva}' foi visto(a) discutindo rispidamente com '{outra_pessoa_viva}' hoje cedo."
+            "'{pessoa_viva}' foi visto(a) discutindo rispidamente com '{outra_pessoa_viva}' hoje cedo.",
+            "'{pessoa_viva}' foi avistado(a) voltando para casa durante a madrugada."
         ],
         "clima": [
             "O dia amanheceu chuvoso e com uma neblina pesada.",
@@ -49,12 +50,15 @@
         "objetos_ruido": [
             "um isqueiro quebrado",
             "uma peça de xadrez (Rei)",
+            "uma peça de xadrez (Cavalo)",
+            "uma peça de xadrez (Torre)",
             "uma carta de baralho (Rei de Espadas)",
             "uma carta de baralho (Ás de Ouro)",
             "uma carta de baralho (Três de Espadas)",
             "uma carta de baralho (Sete de Paus",
             "uma carta de baralho (Valete de Copas)",
-            "um pedaço de tecido rasgado"
+            "um pedaço de tecido rasgado",
+            "metade de um cigarro recém aceso"
         ],
         "template_objeto": "Um objeto estranho foi encontrado na cena: {objeto}."
     }
