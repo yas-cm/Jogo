@@ -6,7 +6,7 @@ import time
 from classes import *
 
 try:
-    with open('codigos/pistas.json', 'r', encoding='utf-8') as f:
+    with open('pistas.json', 'r', encoding='utf-8') as f:
         TEXTOS = json.load(f)
 except FileNotFoundError:
     print(f"ERRO CRÍTICO [pistas.py]: Arquivo 'pistas.json' não encontrado no caminho!")

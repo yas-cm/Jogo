@@ -7,7 +7,7 @@ from classes import *
 
 LARGURA_MAXIMA = 80
 
-PRETO = "\033[30m"
+PRETO = "\033[37m"
 VERMELHO = "\033[31m"
 VERDE = "\033[32m"
 AMARELO = "\033[38;2;255;203;87m"
