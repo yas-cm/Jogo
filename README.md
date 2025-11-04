@@ -1,4 +1,4 @@
-# Jogo de Detetive - Wolvesville
+# Jogo de Detetive
 
 Este projeto é um jogo de lógica e dedução em modo texto.
 
